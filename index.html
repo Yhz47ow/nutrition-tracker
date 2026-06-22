@@ -10,6 +10,7 @@
 <meta name="description" content="专业食物营养追踪器 — 记录每餐碳蛋脂比例">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='64' fill='%234CAF50'/%3E%3Ctext x='256' y='360' font-size='320' text-anchor='middle' fill='white' font-family='-apple-system, sans-serif'%3EN%3C/text%3E%3C/svg%3E">
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <title>营养追踪</title>
 <style>
 /* ===== RESET & BASE ===== */
@@ -345,6 +346,7 @@ a{color:var(--green);text-decoration:none}
   <h1>🥗 营养追踪</h1>
   <div class="header-actions">
     <button class="header-btn" onclick="showScreen('search')" title="搜索食物">🔍</button>
+    <button class="header-btn" onclick="showLogin()" title="账号">👤</button>
     <button class="header-btn" onclick="openModal('customFoodModal')" title="自定义食物">➕</button>
     <button class="header-btn" onclick="openModal('settingsModal')" title="目标设置">⚙️</button>
   </div>
@@ -448,18 +450,26 @@ a{color:var(--green);text-decoration:none}
   <div id="historyContent"></div>
   
   <!-- 云端同步区域 -->
-  <div style="background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin-top:12px">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+  <div style="background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin-top:12px" id="cloudSyncPanel">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
       <span style="font-size:16px">☁️</span>
       <span style="font-weight:600;font-size:14px">云端同步</span>
-      <span id="syncStatus" style="font-size:11px;color:var(--text2);margin-left:auto">未同步</span>
+      <span id="syncStatus" style="font-size:11px;color:var(--text2);margin-left:auto">
+        <span id="syncUserDisplay">未登录</span>
+      </span>
     </div>
-    <div style="display:flex;gap:6px">
-      <button class="btn-secondary" style="flex:1;padding:8px 0" onclick="syncToCloud()">☁️ 上传到云端</button>
-      <button class="btn-secondary" style="flex:1;padding:8px 0" onclick="syncFromCloud()">📥 从云端恢复</button>
+    <div id="syncLoggedOut" style="font-size:13px;color:var(--text2);padding:8px 0;text-align:center">
+      登录后可自动备份到云端，多设备数据互通
+      <button class="btn-secondary" style="display:inline-block;width:auto;padding:6px 16px;margin-top:6px" onclick="showLogin()">👤 登录 / 注册</button>
     </div>
-    <div style="font-size:11px;color:var(--text2);margin-top:6px;text-align:center">
-      多设备共用同一份数据 · 上传前会合并，不会覆盖
+    <div id="syncLoggedIn" style="display:none">
+      <div style="display:flex;gap:6px">
+        <button class="btn-secondary" style="flex:1;padding:8px 0" onclick="syncNow()">🔄 立即同步</button>
+        <button class="btn-secondary" style="flex:1;padding:8px 0" onclick="showLogin()">👤 账号</button>
+      </div>
+      <div style="font-size:11px;color:var(--text2);margin-top:6px;text-align:center">
+        ✅ 数据自动同步 · 修改后 3 秒自动保存到云端
+      </div>
     </div>
   </div>
 
@@ -469,6 +479,42 @@ a{color:var(--green);text-decoration:none}
     <button class="btn-secondary" style="width:auto;padding:8px 18px;display:inline-block;border-color:#ffcdd2" onclick="clearAllData()">🗑️ 清除</button>
   </div>
   <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importData(event)">
+</div>
+
+<!-- ===== MODAL: Login ===== -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div id="loginContent">
+      <div class="modal-title" id="loginTitle">🔐 登录</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px">登录后数据自动同步到云端，多设备共用</p>
+      <div class="form-group">
+        <label>📧 邮箱</label>
+        <input type="email" id="loginEmail" placeholder="your@email.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label>🔑 密码</label>
+        <input type="password" id="loginPassword" placeholder="至少6位" autocomplete="current-password">
+      </div>
+      <div id="loginError" style="color:#f44336;font-size:13px;margin-bottom:8px;display:none"></div>
+      <button class="btn-primary" id="loginBtn" onclick="handleLogin()">✅ 登录</button>
+      <p style="text-align:center;margin-top:10px;font-size:13px;color:var(--text2)">
+        没有账号？<a href="#" onclick="toggleLoginMode()" style="color:var(--green);font-weight:600">注册新账号</a>
+      </p>
+      <button class="btn-secondary" onclick="closeModal('loginModal')" style="margin-top:4px">取消</button>
+    </div>
+    <div id="loginProfile" style="display:none">
+      <div class="modal-title">👤 账号信息</div>
+      <div style="text-align:center;padding:10px 0">
+        <div style="font-size:40px;margin-bottom:6px">👤</div>
+        <div style="font-weight:600;font-size:16px" id="profileEmail">user@email.com</div>
+        <div style="font-size:12px;color:var(--green);margin-top:4px">✅ 已登录 · 数据自动云端同步</div>
+      </div>
+      <button class="btn-primary" onclick="syncNow()">🔄 立即同步</button>
+      <button class="btn-secondary" onclick="logoutUser()">🚪 退出登录</button>
+      <button class="btn-secondary" onclick="closeModal('loginModal')">关闭</button>
+    </div>
+  </div>
 </div>
 
 <!-- ===== MODAL: Settings (Targets) ===== -->
@@ -1740,9 +1786,470 @@ async function syncFromCloud(){
 
 // ===== RECOMMENDED MEAL SUGGESTION (simple) =====
 // This is shown as part of the dashboard when no meals exist
-function getDietSuggestion(){
-  const g = 0; // placeholder
+function getDietSuggestion(){}
+
+// ===== SUPABASE CLOUD SYNC =====
+// ⚠️ 第一次使用前，去 supabase.com 注册免费账号并创建项目
+// 然后把下面的 URL 和 ANON_KEY 替换成你自己的
+
+const SUPABASE_CONFIG = {
+  url: 'https://YOUR_PROJECT.supabase.co',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlvdXItcHJvamVjdCIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjE2MTYxNjE2LCJleHAiOjE5NzE5MTkxOTl9.xxxxxxxxx',
+};
+// 从 localStorage 读取用户自定义的配置（用户首次登录时设置）
+let supabaseUrl = localStorage.getItem('supabase_url') || SUPABASE_CONFIG.url;
+let supabaseKey = localStorage.getItem('supabase_key') || SUPABASE_CONFIG.anonKey;
+
+let supabase = null;
+let supabaseUser = null;
+let setupAttempted = false;
+
+// 保存用户配置
+function saveSupabaseConfig(url, key){
+  supabaseUrl = url;
+  supabaseKey = key;
+  localStorage.setItem('supabase_url', url);
+  localStorage.setItem('supabase_key', key);
 }
+
+// 初始化 Supabase 客户端
+function initSupabase(url, key){
+  if(!url || url.includes('YOUR_PROJECT') || !key || key.includes('xxxxx')){
+    return false;
+  }
+  try{
+    supabase = window.supabase.createClient(url, key, {
+      auth: { persistSession: true, autoRefreshToken: true, },
+    });
+    return true;
+  } catch(e){
+    console.error('Supabase init error:', e);
+    return false;
+  }
+}
+
+// 检测并初始化（如果已有配置）
+function tryInitSupabase(){
+  const u = localStorage.getItem('supabase_url');
+  const k = localStorage.getItem('supabase_key');
+  if(u && k && !u.includes('YOUR_PROJECT') && !k.includes('xxxxx')){
+    if(initSupabase(u, k)){
+      checkSession();
+      return true;
+    }
+  }
+  return false;
+}
+
+// 检查登录状态
+async function checkSession(){
+  if(!supabase) return;
+  try{
+    const { data } = await supabase.auth.getSession();
+    if(data?.session?.user){
+      supabaseUser = data.session.user;
+      updateProfileUI();
+      // 登录后自动从云端拉取数据
+      await loadCloudData();
+    }
+  } catch(e){}
+}
+
+// ===== AUTH UI =====
+let isLoginMode = true;
+
+function showLogin(){
+  if(supabaseUser){
+    // 已登录 → 显示个人资料
+    updateProfileUI();
+    openModal('loginModal');
+    return;
+  }
+  // 先检查是否有 Supabase 配置
+  const u = localStorage.getItem('supabase_url');
+  const k = localStorage.getItem('supabase_key');
+  if(!u || !k || u.includes('YOUR_PROJECT') || k.includes('xxxxx')){
+    // 首次使用，引导配置
+    showSetupGuide();
+    return;
+  }
+  isLoginMode = true;
+  document.getElementById('loginTitle').textContent = '🔐 登录';
+  document.getElementById('loginBtn').textContent = '✅ 登录';
+  document.getElementById('loginError').style.display = 'none';
+  document.getElementById('loginContent').style.display = 'block';
+  document.getElementById('loginProfile').style.display = 'none';
+  openModal('loginModal');
+}
+
+function toggleLoginMode(){
+  isLoginMode = !isLoginMode;
+  document.getElementById('loginTitle').textContent = isLoginMode ? '🔐 登录' : '📝 注册';
+  document.getElementById('loginBtn').textContent = isLoginMode ? '✅ 登录' : '📝 注册';
+  document.getElementById('loginError').style.display = 'none';
+}
+
+async function handleLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+
+  if(!email || !password){
+    errEl.textContent = '请填写邮箱和密码';
+    errEl.style.display = 'block';
+    return;
+  }
+  if(password.length < 6){
+    errEl.textContent = '密码至少6位';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  // 确保 Supabase 已初始化
+  if(!supabase){
+    // 尝试用已保存的配置初始化
+    const u = localStorage.getItem('supabase_url');
+    const k = localStorage.getItem('supabase_key');
+    if(!u || !k || u.includes('YOUR_PROJECT') || k.includes('xxxxx')){
+      errEl.textContent = '请先配置 Supabase 连接信息';
+      errEl.style.display = 'block';
+      showSetupGuide();
+      return;
+    }
+    if(!initSupabase(u, k)){
+      errEl.textContent = 'Supabase 连接失败，请检查配置';
+      errEl.style.display = 'block';
+      return;
+    }
+  }
+
+  errEl.style.display = 'none';
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ 处理中…';
+
+  try{
+    let result;
+    if(isLoginMode){
+      result = await supabase.auth.signInWithPassword({ email, password });
+    } else {
+      result = await supabase.auth.signUp({ email, password });
+    }
+
+    if(result.error){
+      errEl.textContent = result.error.message;
+      errEl.style.display = 'block';
+      return;
+    }
+
+    if(!isLoginMode && result.data?.user?.identities?.length === 0){
+      errEl.textContent = '该邮箱已注册，请直接登录';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    if(!isLoginMode && result.data?.user){
+      // 注册成功
+      alert('✅ 注册成功！请检查邮箱验证（或直接登录）');
+      isLoginMode = true;
+      document.getElementById('loginTitle').textContent = '🔐 登录';
+      document.getElementById('loginBtn').textContent = '✅ 登录';
+      return;
+    }
+
+    // 登录成功
+    supabaseUser = result.data.user;
+    closeModal('loginModal');
+    updateProfileUI();
+    
+    // 从云端加载数据
+    await loadCloudData();
+    
+    if(isLoginMode) alert('✅ 登录成功！数据已自动同步');
+    
+  } catch(e){
+    errEl.textContent = '网络错误：' + e.message;
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = isLoginMode ? '✅ 登录' : '📝 注册';
+  }
+}
+
+function updateProfileUI(){
+  if(!supabaseUser) return;
+  document.getElementById('profileEmail').textContent = supabaseUser.email;
+  document.getElementById('loginContent').style.display = 'none';
+  document.getElementById('loginProfile').style.display = 'block';
+  // 添加配置入口
+  const profileDiv = document.getElementById('loginProfile');
+  if(!document.getElementById('profileConfigBtn')){
+    const configBtn = document.createElement('button');
+    configBtn.className = 'btn-secondary';
+    configBtn.id = 'profileConfigBtn';
+    configBtn.textContent = '⚙️ 修改 Supabase 配置';
+    configBtn.onclick = showSetupGuide;
+    configBtn.style.marginTop = '4px';
+    profileDiv.appendChild(configBtn);
+  }
+  updateSyncPanelUI();
+}
+
+async function logoutUser(){
+  if(!supabase) return;
+  await supabase.auth.signOut();
+  supabaseUser = null;
+  closeModal('loginModal');
+  updateSyncPanelUI();
+  alert('已退出登录，数据保留在本地');
+}
+
+// 更新同步面板 UI
+function updateSyncPanelUI(){
+  const loggedOut = document.getElementById('syncLoggedOut');
+  const loggedIn = document.getElementById('syncLoggedIn');
+  const userDisplay = document.getElementById('syncUserDisplay');
+  if(!loggedOut || !loggedIn || !userDisplay) return;
+  
+  if(supabaseUser){
+    loggedOut.style.display = 'none';
+    loggedIn.style.display = 'block';
+    userDisplay.textContent = supabaseUser.email + ' ✅';
+  } else {
+    loggedOut.style.display = 'block';
+    loggedIn.style.display = 'none';
+    userDisplay.textContent = '未登录';
+  }
+}
+
+function syncNow(){
+  if(!supabaseUser || !supabase){
+    alert('请先登录');
+    return;
+  }
+  saveCloudData().then(() => {
+    alert('✅ 同步完成');
+  });
+}
+
+// ===== 引导配置 Supabase =====
+function showSetupGuide(){
+  const existingUrl = localStorage.getItem('supabase_url') || '';
+  const existingKey = localStorage.getItem('supabase_key') || '';
+  
+  const url = prompt(
+    '⚙️ 配置 Supabase 云数据库\n\n' +
+    '还没有？去 supabase.com 注册（免费）→ 创建项目 → 复制 API 地址\n\n' +
+    '请输入 Supabase URL：\n（类似 https://xxx.supabase.co）',
+    existingUrl
+  );
+  if(!url) return;
+  
+  const key = prompt(
+    '请输入 Supabase Anon Key（公开密钥）：\n（在项目 Settings → API 中复制）',
+    existingKey
+  );
+  if(!key) return;
+  
+  saveSupabaseConfig(url, key);
+  if(initSupabase(url, key)){
+    alert('✅ 配置成功！现在可以登录或注册了');
+    isLoginMode = true;
+    document.getElementById('loginTitle').textContent = '🔐 登录';
+    document.getElementById('loginBtn').textContent = '✅ 登录';
+    document.getElementById('loginContent').style.display = 'block';
+    document.getElementById('loginProfile').style.display = 'none';
+    document.getElementById('loginError').style.display = 'none';
+    openModal('loginModal');
+  } else {
+    alert('❌ 配置无效，请检查 URL 和 Key 是否正确');
+  }
+}
+
+// ===== 云端数据操作 =====
+async function loadCloudData(){
+  if(!supabase || !supabaseUser) return;
+  try{
+    const userId = supabaseUser.id;
+    
+    // 加载饮食记录
+    const { data: records } = await supabase
+      .from('food_records')
+      .select('*')
+      .eq('user_id', userId);
+    
+    if(records && records.length > 0){
+      // 将数据库记录转换为 state 格式
+      const newRecords = {};
+      records.forEach(r => {
+        if(!newRecords[r.date]) newRecords[r.date] = {breakfast:[],lunch:[],dinner:[],snack:[]};
+        newRecords[r.date][r.meal_type].push({
+          id: r.food_id || r.id,
+          foodId: r.food_id,
+          foodName: r.food_name,
+          grams: r.grams,
+          calories: r.calories,
+          protein: r.protein,
+          carbs: r.carbs,
+          fat: r.fat,
+          mealType: r.meal_type,
+        });
+      });
+      // 合并到本地（云端优先）
+      Object.keys(newRecords).forEach(date => {
+        if(!state.records[date]) state.records[date] = {breakfast:[],lunch:[],dinner:[],snack:[]};
+        MEAL_TYPES.forEach(mt => {
+          if(newRecords[date][mt].length > 0){
+            state.records[date][mt] = newRecords[date][mt];
+          }
+        });
+      });
+    }
+    
+    // 加载自定义食物
+    const { data: customs } = await supabase
+      .from('custom_foods')
+      .select('*')
+      .eq('user_id', userId);
+    
+    if(customs && customs.length > 0){
+      customs.forEach(f => {
+        const existing = state.customFoods.findIndex(c => c.id === f.id);
+        const food = {
+          id: f.id,
+          name: f.name,
+          caloriesPer100g: f.calories_per_100g,
+          proteinPer100g: f.protein_per_100g,
+          carbsPer100g: f.carbs_per_100g,
+          fatPer100g: f.fat_per_100g,
+          servingSize: f.serving_size || 100,
+          source: 'custom',
+        };
+        if(existing >= 0) state.customFoods[existing] = food;
+        else state.customFoods.push(food);
+      });
+    }
+    
+    // 加载目标设置
+    const { data: targets } = await supabase
+      .from('targets')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    
+    if(targets){
+      state.targets.calories = targets.calories || 1600;
+      state.targets.carbs = targets.carbs || 160;
+      state.targets.protein = targets.protein || 120;
+      state.targets.fat = targets.fat || 44;
+    }
+    
+    saveData();
+    renderDashboard();
+    console.log('☁️ 已从云端加载数据');
+  } catch(e){
+    console.log('云端加载失败（首次使用或网络问题）:', e.message);
+  }
+}
+
+let syncTimer = null;
+
+async function saveCloudData(){
+  if(!supabase || !supabaseUser) return;
+  try{
+    const userId = supabaseUser.id;
+    
+    // 保存饮食记录（清空后重建）
+    await supabase.from('food_records').delete().eq('user_id', userId);
+    
+    const recordsToInsert = [];
+    Object.keys(state.records).forEach(date => {
+      MEAL_TYPES.forEach(mt => {
+        state.records[date][mt].forEach(item => {
+          recordsToInsert.push({
+            user_id: userId,
+            date: date,
+            meal_type: mt,
+            food_id: item.id,
+            food_name: item.foodName,
+            grams: item.grams,
+            calories: item.calories,
+            protein: item.protein,
+            carbs: item.carbs,
+            fat: item.fat,
+          });
+        });
+      });
+    });
+    
+    if(recordsToInsert.length > 0){
+      // 分批插入（每批 50 条）
+      for(let i = 0; i < recordsToInsert.length; i += 50){
+        await supabase.from('food_records').insert(recordsToInsert.slice(i, i + 50));
+      }
+    }
+    
+    // 保存自定义食物
+    if(state.customFoods.length > 0){
+      await supabase.from('custom_foods').delete().eq('user_id', userId);
+      const customsToInsert = state.customFoods.map(f => ({
+        id: f.id,
+        user_id: userId,
+        name: f.name,
+        calories_per_100g: f.caloriesPer100g,
+        protein_per_100g: f.proteinPer100g,
+        carbs_per_100g: f.carbsPer100g,
+        fat_per_100g: f.fatPer100g,
+        serving_size: f.servingSize || 100,
+      }));
+      await supabase.from('custom_foods').insert(customsToInsert);
+    }
+    
+    // 保存目标设置
+    const { data: existingTarget } = await supabase
+      .from('targets')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
+    
+    const targetData = {
+      user_id: userId,
+      calories: state.targets.calories,
+      carbs: state.targets.carbs,
+      protein: state.targets.protein,
+      fat: state.targets.fat,
+    };
+    
+    if(existingTarget){
+      await supabase.from('targets').update(targetData).eq('user_id', userId);
+    } else {
+      await supabase.from('targets').insert(targetData);
+    }
+    
+    console.log('☁️ 已同步到云端');
+  } catch(e){
+    console.log('云端保存失败:', e.message);
+  }
+}
+
+// 自动同步（数据变化后延迟 3 秒保存）
+function scheduleCloudSync(){
+  if(!supabase || !supabaseUser) return;
+  if(syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    saveCloudData();
+  }, 3000);
+}
+
+// 重写 saveData 以触发云端同步
+const origSaveData = saveData;
+saveData = function(){
+  origSaveData();
+  scheduleCloudSync();
+};
+
+// 尝试初始化 Supabase
+tryInitSupabase();
 
 // ===== SERVICE WORKER REGISTRATION =====
 if('serviceWorker' in navigator){
