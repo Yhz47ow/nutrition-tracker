@@ -10,7 +10,6 @@
 <meta name="description" content="专业食物营养追踪器 — 记录每餐碳蛋脂比例">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='64' fill='%234CAF50'/%3E%3Ctext x='256' y='360' font-size='320' text-anchor='middle' fill='white' font-family='-apple-system, sans-serif'%3EN%3C/text%3E%3C/svg%3E">
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <title>营养追踪</title>
 <style>
 /* ===== RESET & BASE ===== */
@@ -1788,88 +1787,49 @@ async function syncFromCloud(){
 // This is shown as part of the dashboard when no meals exist
 function getDietSuggestion(){}
 
-// ===== SUPABASE CLOUD SYNC =====
-// ⚠️ 第一次使用前，去 supabase.com 注册免费账号并创建项目
-// 然后把下面的 URL 和 ANON_KEY 替换成你自己的
+// ===== CLOUD SYNC (自建后端 API) =====
+// 后端服务器地址（部署到 Render 后替换）
+const API_BASE = localStorage.getItem('api_base') || 'http://localhost:3000';
 
-const SUPABASE_CONFIG = {
-  url: 'https://YOUR_PROJECT.supabase.co',
-  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlvdXItcHJvamVjdCIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjE2MTYxNjE2LCJleHAiOjE5NzE5MTkxOTl9.xxxxxxxxx',
-};
-// 从 localStorage 读取用户自定义的配置（用户首次登录时设置）
-let supabaseUrl = localStorage.getItem('supabase_url') || SUPABASE_CONFIG.url;
-let supabaseKey = localStorage.getItem('supabase_key') || SUPABASE_CONFIG.anonKey;
+let apiUser = null;         // { id, email, token }
+let syncTimer = null;
 
-let supabase = null;
-let supabaseUser = null;
-let setupAttempted = false;
-
-// 保存用户配置
-function saveSupabaseConfig(url, key){
-  supabaseUrl = url;
-  supabaseKey = key;
-  localStorage.setItem('supabase_url', url);
-  localStorage.setItem('supabase_key', key);
+// 保存服务器地址
+function setApiBase(url){
+  localStorage.setItem('api_base', url);
 }
 
-// 初始化 Supabase 客户端
-function initSupabase(url, key){
-  if(!url || url.includes('YOUR_PROJECT') || !key || key.includes('xxxxx')){
-    return false;
+// ===== API 通用请求 =====
+async function apiRequest(method, path, body){
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+  };
+  if(apiUser?.token){
+    opts.headers['Authorization'] = 'Bearer ' + apiUser.token;
   }
-  try{
-    supabase = window.supabase.createClient(url, key, {
-      auth: { persistSession: true, autoRefreshToken: true, },
-    });
-    return true;
-  } catch(e){
-    console.error('Supabase init error:', e);
-    return false;
-  }
-}
-
-// 检测并初始化（如果已有配置）
-function tryInitSupabase(){
-  const u = localStorage.getItem('supabase_url');
-  const k = localStorage.getItem('supabase_key');
-  if(u && k && !u.includes('YOUR_PROJECT') && !k.includes('xxxxx')){
-    if(initSupabase(u, k)){
-      checkSession();
-      return true;
-    }
-  }
-  return false;
-}
-
-// 检查登录状态
-async function checkSession(){
-  if(!supabase) return;
-  try{
-    const { data } = await supabase.auth.getSession();
-    if(data?.session?.user){
-      supabaseUser = data.session.user;
-      updateProfileUI();
-      // 登录后自动从云端拉取数据
-      await loadCloudData();
-    }
-  } catch(e){}
+  if(body) opts.body = JSON.stringify(body);
+  
+  const res = await fetch(API_BASE + path, opts);
+  const data = await res.json();
+  if(!res.ok) throw new Error(data.error || '请求失败');
+  return data;
 }
 
 // ===== AUTH UI =====
 let isLoginMode = true;
 
 function showLogin(){
-  if(supabaseUser){
+  if(apiUser){
     // 已登录 → 显示个人资料
     updateProfileUI();
     openModal('loginModal');
     return;
   }
-  // 先检查是否有 Supabase 配置
-  const u = localStorage.getItem('supabase_url');
-  const k = localStorage.getItem('supabase_key');
-  if(!u || !k || u.includes('YOUR_PROJECT') || k.includes('xxxxx')){
-    // 首次使用，引导配置
+  // 检查是否已配置服务器地址
+  const savedUrl = localStorage.getItem('api_base');
+  if(!savedUrl || savedUrl.includes('localhost')){
+    // 引导配置服务器地址
     showSetupGuide();
     return;
   }
@@ -1905,22 +1865,13 @@ async function handleLogin(){
     return;
   }
 
-  // 确保 Supabase 已初始化
-  if(!supabase){
-    // 尝试用已保存的配置初始化
-    const u = localStorage.getItem('supabase_url');
-    const k = localStorage.getItem('supabase_key');
-    if(!u || !k || u.includes('YOUR_PROJECT') || k.includes('xxxxx')){
-      errEl.textContent = '请先配置 Supabase 连接信息';
-      errEl.style.display = 'block';
-      showSetupGuide();
-      return;
-    }
-    if(!initSupabase(u, k)){
-      errEl.textContent = 'Supabase 连接失败，请检查配置';
-      errEl.style.display = 'block';
-      return;
-    }
+  // 检查服务器地址
+  const savedUrl = localStorage.getItem('api_base');
+  if(!savedUrl){
+    errEl.textContent = '请先配置服务器地址';
+    errEl.style.display = 'block';
+    showSetupGuide();
+    return;
   }
 
   errEl.style.display = 'none';
@@ -1929,46 +1880,29 @@ async function handleLogin(){
   btn.textContent = '⏳ 处理中…';
 
   try{
-    let result;
-    if(isLoginMode){
-      result = await supabase.auth.signInWithPassword({ email, password });
-    } else {
-      result = await supabase.auth.signUp({ email, password });
-    }
+    const endpoint = isLoginMode ? '/api/login' : '/api/register';
+    const result = await apiRequest('POST', endpoint, { email, password });
 
-    if(result.error){
-      errEl.textContent = result.error.message;
-      errEl.style.display = 'block';
-      return;
-    }
+    // 登录/注册成功
+    apiUser = {
+      id: result.user.id,
+      email: result.user.email,
+      token: result.token,
+    };
+    // 保存到 localStorage
+    localStorage.setItem('api_user', JSON.stringify(apiUser));
 
-    if(!isLoginMode && result.data?.user?.identities?.length === 0){
-      errEl.textContent = '该邮箱已注册，请直接登录';
-      errEl.style.display = 'block';
-      return;
-    }
-
-    if(!isLoginMode && result.data?.user){
-      // 注册成功
-      alert('✅ 注册成功！请检查邮箱验证（或直接登录）');
-      isLoginMode = true;
-      document.getElementById('loginTitle').textContent = '🔐 登录';
-      document.getElementById('loginBtn').textContent = '✅ 登录';
-      return;
-    }
-
-    // 登录成功
-    supabaseUser = result.data.user;
     closeModal('loginModal');
     updateProfileUI();
     
     // 从云端加载数据
     await loadCloudData();
     
-    if(isLoginMode) alert('✅ 登录成功！数据已自动同步');
+    const msg = isLoginMode ? '✅ 登录成功！数据已自动同步' : '✅ 注册成功！已自动登录';
+    alert(msg);
     
   } catch(e){
-    errEl.textContent = '网络错误：' + e.message;
+    errEl.textContent = e.message;
     errEl.style.display = 'block';
   } finally {
     btn.disabled = false;
@@ -1977,8 +1911,8 @@ async function handleLogin(){
 }
 
 function updateProfileUI(){
-  if(!supabaseUser) return;
-  document.getElementById('profileEmail').textContent = supabaseUser.email;
+  if(!apiUser) return;
+  document.getElementById('profileEmail').textContent = apiUser.email;
   document.getElementById('loginContent').style.display = 'none';
   document.getElementById('loginProfile').style.display = 'block';
   // 添加配置入口
@@ -1987,7 +1921,7 @@ function updateProfileUI(){
     const configBtn = document.createElement('button');
     configBtn.className = 'btn-secondary';
     configBtn.id = 'profileConfigBtn';
-    configBtn.textContent = '⚙️ 修改 Supabase 配置';
+    configBtn.textContent = '⚙️ 修改服务器地址';
     configBtn.onclick = showSetupGuide;
     configBtn.style.marginTop = '4px';
     profileDiv.appendChild(configBtn);
@@ -1996,9 +1930,8 @@ function updateProfileUI(){
 }
 
 async function logoutUser(){
-  if(!supabase) return;
-  await supabase.auth.signOut();
-  supabaseUser = null;
+  apiUser = null;
+  localStorage.removeItem('api_user');
   closeModal('loginModal');
   updateSyncPanelUI();
   alert('已退出登录，数据保留在本地');
@@ -2011,10 +1944,10 @@ function updateSyncPanelUI(){
   const userDisplay = document.getElementById('syncUserDisplay');
   if(!loggedOut || !loggedIn || !userDisplay) return;
   
-  if(supabaseUser){
+  if(apiUser){
     loggedOut.style.display = 'none';
     loggedIn.style.display = 'block';
-    userDisplay.textContent = supabaseUser.email + ' ✅';
+    userDisplay.textContent = apiUser.email + ' ✅';
   } else {
     loggedOut.style.display = 'block';
     loggedIn.style.display = 'none';
@@ -2023,7 +1956,7 @@ function updateSyncPanelUI(){
 }
 
 function syncNow(){
-  if(!supabaseUser || !supabase){
+  if(!apiUser){
     alert('请先登录');
     return;
   }
@@ -2032,209 +1965,89 @@ function syncNow(){
   });
 }
 
-// ===== 引导配置 Supabase =====
+// ===== 引导配置服务器地址 =====
 function showSetupGuide(){
-  const existingUrl = localStorage.getItem('supabase_url') || '';
-  const existingKey = localStorage.getItem('supabase_key') || '';
+  const existingUrl = localStorage.getItem('api_base') || '';
   
   const url = prompt(
-    '⚙️ 配置 Supabase 云数据库\n\n' +
-    '还没有？去 supabase.com 注册（免费）→ 创建项目 → 复制 API 地址\n\n' +
-    '请输入 Supabase URL：\n（类似 https://xxx.supabase.co）',
-    existingUrl
+    '⚙️ 配置服务器地址\n\n' +
+    '方式一：部署到 Render（推荐）\n' +
+    '  在 render.com 部署后获得 https://xxx.onrender.com 地址\n\n' +
+    '方式二：本地测试\n' +
+    '  输入 http://192.168.1.250:3000\n\n' +
+    '请输入服务器地址：',
+    existingUrl || 'http://localhost:3000'
   );
   if(!url) return;
   
-  const key = prompt(
-    '请输入 Supabase Anon Key（公开密钥）：\n（在项目 Settings → API 中复制）',
-    existingKey
-  );
-  if(!key) return;
-  
-  saveSupabaseConfig(url, key);
-  if(initSupabase(url, key)){
-    alert('✅ 配置成功！现在可以登录或注册了');
-    isLoginMode = true;
-    document.getElementById('loginTitle').textContent = '🔐 登录';
-    document.getElementById('loginBtn').textContent = '✅ 登录';
-    document.getElementById('loginContent').style.display = 'block';
-    document.getElementById('loginProfile').style.display = 'none';
-    document.getElementById('loginError').style.display = 'none';
-    openModal('loginModal');
-  } else {
-    alert('❌ 配置无效，请检查 URL 和 Key 是否正确');
-  }
+  setApiBase(url);
+  alert('✅ 服务器地址已保存！现在可以登录或注册了');
+  isLoginMode = true;
+  document.getElementById('loginTitle').textContent = '🔐 登录';
+  document.getElementById('loginBtn').textContent = '✅ 登录';
+  document.getElementById('loginContent').style.display = 'block';
+  document.getElementById('loginProfile').style.display = 'none';
+  document.getElementById('loginError').style.display = 'none';
+  openModal('loginModal');
 }
 
 // ===== 云端数据操作 =====
 async function loadCloudData(){
-  if(!supabase || !supabaseUser) return;
+  if(!apiUser) return;
   try{
-    const userId = supabaseUser.id;
+    const data = await apiRequest('GET', '/api/sync/download');
     
-    // 加载饮食记录
-    const { data: records } = await supabase
-      .from('food_records')
-      .select('*')
-      .eq('user_id', userId);
-    
-    if(records && records.length > 0){
-      // 将数据库记录转换为 state 格式
-      const newRecords = {};
-      records.forEach(r => {
-        if(!newRecords[r.date]) newRecords[r.date] = {breakfast:[],lunch:[],dinner:[],snack:[]};
-        newRecords[r.date][r.meal_type].push({
-          id: r.food_id || r.id,
-          foodId: r.food_id,
-          foodName: r.food_name,
-          grams: r.grams,
-          calories: r.calories,
-          protein: r.protein,
-          carbs: r.carbs,
-          fat: r.fat,
-          mealType: r.meal_type,
-        });
-      });
-      // 合并到本地（云端优先）
-      Object.keys(newRecords).forEach(date => {
+    // 合并记录
+    if(data.records){
+      Object.keys(data.records).forEach(date => {
         if(!state.records[date]) state.records[date] = {breakfast:[],lunch:[],dinner:[],snack:[]};
         MEAL_TYPES.forEach(mt => {
-          if(newRecords[date][mt].length > 0){
-            state.records[date][mt] = newRecords[date][mt];
+          if(data.records[date][mt]?.length > 0){
+            // 云端优先
+            state.records[date][mt] = data.records[date][mt];
           }
         });
       });
     }
     
-    // 加载自定义食物
-    const { data: customs } = await supabase
-      .from('custom_foods')
-      .select('*')
-      .eq('user_id', userId);
-    
-    if(customs && customs.length > 0){
-      customs.forEach(f => {
-        const existing = state.customFoods.findIndex(c => c.id === f.id);
-        const food = {
-          id: f.id,
-          name: f.name,
-          caloriesPer100g: f.calories_per_100g,
-          proteinPer100g: f.protein_per_100g,
-          carbsPer100g: f.carbs_per_100g,
-          fatPer100g: f.fat_per_100g,
-          servingSize: f.serving_size || 100,
-          source: 'custom',
-        };
-        if(existing >= 0) state.customFoods[existing] = food;
-        else state.customFoods.push(food);
+    // 合并自定义食物
+    if(data.customFoods?.length > 0){
+      const existingIds = new Set(state.customFoods.map(f=>f.id));
+      data.customFoods.forEach(f => {
+        if(!existingIds.has(f.id)) state.customFoods.push(f);
       });
     }
     
-    // 加载目标设置
-    const { data: targets } = await supabase
-      .from('targets')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-    
-    if(targets){
-      state.targets.calories = targets.calories || 1600;
-      state.targets.carbs = targets.carbs || 160;
-      state.targets.protein = targets.protein || 120;
-      state.targets.fat = targets.fat || 44;
+    // 合并目标
+    if(data.targets){
+      Object.assign(state.targets, data.targets);
     }
     
     saveData();
     renderDashboard();
     console.log('☁️ 已从云端加载数据');
   } catch(e){
-    console.log('云端加载失败（首次使用或网络问题）:', e.message);
+    console.log('云端加载失败:', e.message);
   }
 }
 
-let syncTimer = null;
-
 async function saveCloudData(){
-  if(!supabase || !supabaseUser) return;
+  if(!apiUser) return;
   try{
-    const userId = supabaseUser.id;
-    
-    // 保存饮食记录（清空后重建）
-    await supabase.from('food_records').delete().eq('user_id', userId);
-    
-    const recordsToInsert = [];
-    Object.keys(state.records).forEach(date => {
-      MEAL_TYPES.forEach(mt => {
-        state.records[date][mt].forEach(item => {
-          recordsToInsert.push({
-            user_id: userId,
-            date: date,
-            meal_type: mt,
-            food_id: item.id,
-            food_name: item.foodName,
-            grams: item.grams,
-            calories: item.calories,
-            protein: item.protein,
-            carbs: item.carbs,
-            fat: item.fat,
-          });
-        });
-      });
+    await apiRequest('POST', '/api/sync/upload', {
+      records: state.records,
+      customFoods: state.customFoods,
+      targets: state.targets,
     });
-    
-    if(recordsToInsert.length > 0){
-      // 分批插入（每批 50 条）
-      for(let i = 0; i < recordsToInsert.length; i += 50){
-        await supabase.from('food_records').insert(recordsToInsert.slice(i, i + 50));
-      }
-    }
-    
-    // 保存自定义食物
-    if(state.customFoods.length > 0){
-      await supabase.from('custom_foods').delete().eq('user_id', userId);
-      const customsToInsert = state.customFoods.map(f => ({
-        id: f.id,
-        user_id: userId,
-        name: f.name,
-        calories_per_100g: f.caloriesPer100g,
-        protein_per_100g: f.proteinPer100g,
-        carbs_per_100g: f.carbsPer100g,
-        fat_per_100g: f.fatPer100g,
-        serving_size: f.servingSize || 100,
-      }));
-      await supabase.from('custom_foods').insert(customsToInsert);
-    }
-    
-    // 保存目标设置
-    const { data: existingTarget } = await supabase
-      .from('targets')
-      .select('id')
-      .eq('user_id', userId)
-      .maybeSingle();
-    
-    const targetData = {
-      user_id: userId,
-      calories: state.targets.calories,
-      carbs: state.targets.carbs,
-      protein: state.targets.protein,
-      fat: state.targets.fat,
-    };
-    
-    if(existingTarget){
-      await supabase.from('targets').update(targetData).eq('user_id', userId);
-    } else {
-      await supabase.from('targets').insert(targetData);
-    }
-    
     console.log('☁️ 已同步到云端');
   } catch(e){
     console.log('云端保存失败:', e.message);
   }
 }
 
-// 自动同步（数据变化后延迟 3 秒保存）
+// 自动同步
 function scheduleCloudSync(){
-  if(!supabase || !supabaseUser) return;
+  if(!apiUser) return;
   if(syncTimer) clearTimeout(syncTimer);
   syncTimer = setTimeout(() => {
     saveCloudData();
@@ -2248,9 +2061,18 @@ saveData = function(){
   scheduleCloudSync();
 };
 
-// 尝试初始化 Supabase
-tryInitSupabase();
-
+// 尝试恢复登录状态
+(function tryRestoreSession(){
+  const saved = localStorage.getItem('api_user');
+  if(saved){
+    try{
+      apiUser = JSON.parse(saved);
+      updateSyncPanelUI();
+      // 后台加载云端数据
+      setTimeout(() => loadCloudData(), 1000);
+    } catch(e){}
+  }
+})();
 // ===== SERVICE WORKER REGISTRATION =====
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js').then(reg => {
