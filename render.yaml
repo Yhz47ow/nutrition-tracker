@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: nutrition-tracker-api
+    env: node
+    buildCommand: cd server && npm install
+    startCommand: cd server && node server.js
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PORT
+        value: "3000"
+    healthCheckPath: /api/health
