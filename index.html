@@ -345,9 +345,7 @@ a{color:var(--green);text-decoration:none}
   <h1>🥗 营养追踪</h1>
   <div class="header-actions">
     <button class="header-btn" onclick="showScreen('search')" title="搜索食物">🔍</button>
-    <button class="header-btn" onclick="showLogin()" title="账号">👤</button>
-    <button class="header-btn" onclick="openModal('customFoodModal')" title="自定义食物">➕</button>
-    <button class="header-btn" onclick="openModal('settingsModal')" title="目标设置">⚙️</button>
+    <button class="header-btn" onclick="setupGistSync()" title="云同步">☁️</button>
   </div>
 </header>
 
@@ -459,15 +457,15 @@ a{color:var(--green);text-decoration:none}
     </div>
     <div id="syncLoggedOut" style="font-size:13px;color:var(--text2);padding:8px 0;text-align:center">
       登录后可自动备份到云端，多设备数据互通
-      <button class="btn-secondary" style="display:inline-block;width:auto;padding:6px 16px;margin-top:6px" onclick="showLogin()">👤 登录 / 注册</button>
+      <button class="btn-secondary" style="display:inline-block;width:auto;padding:6px 16px;margin-top:6px" onclick="setupGistSync()">☁️ 配置 GitHub 同步</button>
     </div>
     <div id="syncLoggedIn" style="display:none">
       <div style="display:flex;gap:6px">
-        <button class="btn-secondary" style="flex:1;padding:8px 0" onclick="syncNow()">🔄 立即同步</button>
-        <button class="btn-secondary" style="flex:1;padding:8px 0" onclick="showLogin()">👤 账号</button>
+        <button class="btn-secondary" style="flex:1;padding:8px 0" onclick="syncToCloud()">☁️ 上传到云端</button>
+        <button class="btn-secondary" style="flex:1;padding:8px 0" onclick="syncFromCloud()">📥 从云端恢复</button>
       </div>
-      <div style="font-size:11px;color:var(--text2);margin-top:6px;text-align:center">
-        ✅ 数据自动同步 · 修改后 3 秒自动保存到云端
+      <div style="font-size:11px;color:var(--text2);margin-top:6px;text-align:center" id="syncStatusText">
+        ✅ 已连接 GitHub · 点「上传」或「恢复」
       </div>
     </div>
   </div>
@@ -480,41 +478,30 @@ a{color:var(--green);text-decoration:none}
   <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importData(event)">
 </div>
 
-<!-- ===== MODAL: Login ===== -->
-<div class="modal-overlay" id="loginModal">
+<!-- ===== MODAL: Gist Sync ===== -->
+<div class="modal-overlay" id="gistModal">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div id="loginContent">
-      <div class="modal-title" id="loginTitle">🔐 登录</div>
-      <p style="font-size:13px;color:var(--text2);margin-bottom:14px">登录后数据自动同步到云端，多设备共用</p>
-      <div class="form-group">
-        <label>📧 邮箱</label>
-        <input type="email" id="loginEmail" placeholder="your@email.com" autocomplete="email">
-      </div>
-      <div class="form-group">
-        <label>🔑 密码</label>
-        <input type="password" id="loginPassword" placeholder="至少6位" autocomplete="current-password">
-      </div>
-      <div id="loginError" style="color:#f44336;font-size:13px;margin-bottom:8px;display:none"></div>
-      <button class="btn-primary" id="loginBtn" onclick="handleLogin()">✅ 登录</button>
-      <p style="text-align:center;margin-top:10px;font-size:13px;color:var(--text2)">
-        没有账号？<a href="#" onclick="toggleLoginMode()" style="color:var(--green);font-weight:600">注册新账号</a>
-      </p>
-      <button class="btn-secondary" onclick="closeModal('loginModal')" style="margin-top:4px">取消</button>
+    <div class="modal-title">☁️ GitHub 云同步</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">
+      用 GitHub Gist 免费存储数据，无需服务器。
+      同一个 Token 在不同手机上都能用。
+    </p>
+    <div style="background:#e8f5e9;border-radius:12px;padding:12px;margin-bottom:14px;font-size:13px">
+      <strong>✅ 已连接</strong><br>
+      <span id="gistStatus" style="color:var(--text2)">Token 已配置</span>
     </div>
-    <div id="loginProfile" style="display:none">
-      <div class="modal-title">👤 账号信息</div>
-      <div style="text-align:center;padding:10px 0">
-        <div style="font-size:40px;margin-bottom:6px">👤</div>
-        <div style="font-weight:600;font-size:16px" id="profileEmail">user@email.com</div>
-        <div style="font-size:12px;color:var(--green);margin-top:4px">✅ 已登录 · 数据自动云端同步</div>
-      </div>
-      <button class="btn-primary" onclick="syncNow()">🔄 立即同步</button>
-      <button class="btn-secondary" onclick="logoutUser()">🚪 退出登录</button>
-      <button class="btn-secondary" onclick="closeModal('loginModal')">关闭</button>
+    <div style="display:flex;gap:8px;flex-direction:column">
+      <button class="btn-primary" onclick="syncToCloud()">☁️ 上传到云端</button>
+      <button class="btn-primary" style="background:var(--blue)" onclick="syncFromCloud()">📥 从云端恢复</button>
+      <button class="btn-secondary" onclick="setupGistSync()">🔑 更换 Token</button>
+      <button class="btn-secondary" onclick="clearGistConfig()">🗑️ 清除配置</button>
+      <button class="btn-secondary" onclick="closeModal('gistModal')">关闭</button>
     </div>
   </div>
 </div>
+
+<!-- ===== MODAL: Settings (Targets) ===== -->
 
 <!-- ===== MODAL: Settings (Targets) ===== -->
 <div class="modal-overlay" id="settingsModal">
@@ -1787,292 +1774,65 @@ async function syncFromCloud(){
 // This is shown as part of the dashboard when no meals exist
 function getDietSuggestion(){}
 
-// ===== CLOUD SYNC (自建后端 API) =====
-// 后端服务器地址（部署到 Render 后替换）
-const API_BASE = localStorage.getItem('api_base') || 'http://localhost:3000';
+// ===== GITHUB GIST 云同步（无需服务器）=====
+let syncGistId = localStorage.getItem('nutrition_gist_id') || null;
+let githubToken = localStorage.getItem('nutrition_github_token') || '';
 
-let apiUser = null;         // { id, email, token }
-let syncTimer = null;
-
-// 保存服务器地址
-function setApiBase(url){
-  localStorage.setItem('api_base', url);
+// 检查是否已配置
+function isGistConfigured(){
+  return githubToken && !githubToken.includes('YOUR_TOKEN');
 }
 
-// ===== API 通用请求 =====
-async function apiRequest(method, path, body){
-  const opts = {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-  };
-  if(apiUser?.token){
-    opts.headers['Authorization'] = 'Bearer ' + apiUser.token;
-  }
-  if(body) opts.body = JSON.stringify(body);
-  
-  const res = await fetch(API_BASE + path, opts);
-  const data = await res.json();
-  if(!res.ok) throw new Error(data.error || '请求失败');
-  return data;
-}
-
-// ===== AUTH UI =====
-let isLoginMode = true;
-
-function showLogin(){
-  if(apiUser){
-    // 已登录 → 显示个人资料
-    updateProfileUI();
-    openModal('loginModal');
-    return;
-  }
-  // 检查是否已配置服务器地址
-  const savedUrl = localStorage.getItem('api_base');
-  if(!savedUrl || savedUrl.includes('localhost')){
-    // 引导配置服务器地址
-    showSetupGuide();
-    return;
-  }
-  isLoginMode = true;
-  document.getElementById('loginTitle').textContent = '🔐 登录';
-  document.getElementById('loginBtn').textContent = '✅ 登录';
-  document.getElementById('loginError').style.display = 'none';
-  document.getElementById('loginContent').style.display = 'block';
-  document.getElementById('loginProfile').style.display = 'none';
-  openModal('loginModal');
-}
-
-function toggleLoginMode(){
-  isLoginMode = !isLoginMode;
-  document.getElementById('loginTitle').textContent = isLoginMode ? '🔐 登录' : '📝 注册';
-  document.getElementById('loginBtn').textContent = isLoginMode ? '✅ 登录' : '📝 注册';
-  document.getElementById('loginError').style.display = 'none';
-}
-
-async function handleLogin(){
-  const email = document.getElementById('loginEmail').value.trim();
-  const password = document.getElementById('loginPassword').value;
-  const errEl = document.getElementById('loginError');
-
-  if(!email || !password){
-    errEl.textContent = '请填写邮箱和密码';
-    errEl.style.display = 'block';
-    return;
-  }
-  if(password.length < 6){
-    errEl.textContent = '密码至少6位';
-    errEl.style.display = 'block';
-    return;
-  }
-
-  // 检查服务器地址
-  const savedUrl = localStorage.getItem('api_base');
-  if(!savedUrl){
-    errEl.textContent = '请先配置服务器地址';
-    errEl.style.display = 'block';
-    showSetupGuide();
-    return;
-  }
-
-  errEl.style.display = 'none';
-  const btn = document.getElementById('loginBtn');
-  btn.disabled = true;
-  btn.textContent = '⏳ 处理中…';
-
-  try{
-    const endpoint = isLoginMode ? '/api/login' : '/api/register';
-    const result = await apiRequest('POST', endpoint, { email, password });
-
-    // 登录/注册成功
-    apiUser = {
-      id: result.user.id,
-      email: result.user.email,
-      token: result.token,
-    };
-    // 保存到 localStorage
-    localStorage.setItem('api_user', JSON.stringify(apiUser));
-
-    closeModal('loginModal');
-    updateProfileUI();
-    
-    // 从云端加载数据
-    await loadCloudData();
-    
-    const msg = isLoginMode ? '✅ 登录成功！数据已自动同步' : '✅ 注册成功！已自动登录';
-    alert(msg);
-    
-  } catch(e){
-    errEl.textContent = e.message;
-    errEl.style.display = 'block';
-  } finally {
-    btn.disabled = false;
-    btn.textContent = isLoginMode ? '✅ 登录' : '📝 注册';
-  }
-}
-
-function updateProfileUI(){
-  if(!apiUser) return;
-  document.getElementById('profileEmail').textContent = apiUser.email;
-  document.getElementById('loginContent').style.display = 'none';
-  document.getElementById('loginProfile').style.display = 'block';
-  // 添加配置入口
-  const profileDiv = document.getElementById('loginProfile');
-  if(!document.getElementById('profileConfigBtn')){
-    const configBtn = document.createElement('button');
-    configBtn.className = 'btn-secondary';
-    configBtn.id = 'profileConfigBtn';
-    configBtn.textContent = '⚙️ 修改服务器地址';
-    configBtn.onclick = showSetupGuide;
-    configBtn.style.marginTop = '4px';
-    profileDiv.appendChild(configBtn);
-  }
-  updateSyncPanelUI();
-}
-
-async function logoutUser(){
-  apiUser = null;
-  localStorage.removeItem('api_user');
-  closeModal('loginModal');
-  updateSyncPanelUI();
-  alert('已退出登录，数据保留在本地');
-}
-
-// 更新同步面板 UI
+// 更新同步面板状态
 function updateSyncPanelUI(){
   const loggedOut = document.getElementById('syncLoggedOut');
   const loggedIn = document.getElementById('syncLoggedIn');
+  const statusText = document.getElementById('syncStatusText');
   const userDisplay = document.getElementById('syncUserDisplay');
-  if(!loggedOut || !loggedIn || !userDisplay) return;
+  if(!loggedOut || !loggedIn) return;
   
-  if(apiUser){
+  if(isGistConfigured()){
     loggedOut.style.display = 'none';
     loggedIn.style.display = 'block';
-    userDisplay.textContent = apiUser.email + ' ✅';
+    if(userDisplay) userDisplay.textContent = '☁️ 已配置';
+    if(statusText) statusText.textContent = syncGistId ? '✅ 已连接 · 点「上传」或「恢复」' : '⏳ 首次使用请先「上传到云端」';
   } else {
     loggedOut.style.display = 'block';
     loggedIn.style.display = 'none';
-    userDisplay.textContent = '未登录';
+    if(userDisplay) userDisplay.textContent = '未配置';
   }
 }
 
-function syncNow(){
-  if(!apiUser){
-    alert('请先登录');
-    return;
-  }
-  saveCloudData().then(() => {
-    alert('✅ 同步完成');
-  });
-}
-
-// ===== 引导配置服务器地址 =====
-function showSetupGuide(){
-  const existingUrl = localStorage.getItem('api_base') || '';
-  
-  const url = prompt(
-    '⚙️ 配置服务器地址\n\n' +
-    '方式一：部署到 Render（推荐）\n' +
-    '  在 render.com 部署后获得 https://xxx.onrender.com 地址\n\n' +
-    '方式二：本地测试\n' +
-    '  输入 http://192.168.1.250:3000\n\n' +
-    '请输入服务器地址：',
-    existingUrl || 'http://localhost:3000'
+// 配置 GitHub Token
+function setupGistSync(){
+  const existing = localStorage.getItem('nutrition_github_token') || '';
+  const token = prompt(
+    '☁️ GitHub 云同步配置\n\n' +
+    '把你之前创建的 GitHub Token 粘贴到这里\n' +
+    '（在 github.com/settings/tokens 创建，需要勾选 gist 权限）\n\n' +
+    '还没有？现在去创建：\n' +
+    'https://github.com/settings/tokens\n\n' +
+    '粘贴 Token：',
+    existing
   );
-  if(!url) return;
+  if(!token) return;
   
-  setApiBase(url);
-  alert('✅ 服务器地址已保存！现在可以登录或注册了');
-  isLoginMode = true;
-  document.getElementById('loginTitle').textContent = '🔐 登录';
-  document.getElementById('loginBtn').textContent = '✅ 登录';
-  document.getElementById('loginContent').style.display = 'block';
-  document.getElementById('loginProfile').style.display = 'none';
-  document.getElementById('loginError').style.display = 'none';
-  openModal('loginModal');
+  githubToken = token;
+  localStorage.setItem('nutrition_github_token', token);
+  updateSyncPanelUI();
+  alert('✅ Token 已保存！现在点「☁️ 上传到云端」即可备份数据');
 }
 
-// ===== 云端数据操作 =====
-async function loadCloudData(){
-  if(!apiUser) return;
-  try{
-    const data = await apiRequest('GET', '/api/sync/download');
-    
-    // 合并记录
-    if(data.records){
-      Object.keys(data.records).forEach(date => {
-        if(!state.records[date]) state.records[date] = {breakfast:[],lunch:[],dinner:[],snack:[]};
-        MEAL_TYPES.forEach(mt => {
-          if(data.records[date][mt]?.length > 0){
-            // 云端优先
-            state.records[date][mt] = data.records[date][mt];
-          }
-        });
-      });
-    }
-    
-    // 合并自定义食物
-    if(data.customFoods?.length > 0){
-      const existingIds = new Set(state.customFoods.map(f=>f.id));
-      data.customFoods.forEach(f => {
-        if(!existingIds.has(f.id)) state.customFoods.push(f);
-      });
-    }
-    
-    // 合并目标
-    if(data.targets){
-      Object.assign(state.targets, data.targets);
-    }
-    
-    saveData();
-    renderDashboard();
-    console.log('☁️ 已从云端加载数据');
-  } catch(e){
-    console.log('云端加载失败:', e.message);
-  }
+// 清除配置
+function clearGistConfig(){
+  if(!confirm('确定清除 GitHub Token 配置吗？')) return;
+  githubToken = '';
+  syncGistId = null;
+  localStorage.removeItem('nutrition_github_token');
+  localStorage.removeItem('nutrition_gist_id');
+  updateSyncPanelUI();
 }
 
-async function saveCloudData(){
-  if(!apiUser) return;
-  try{
-    await apiRequest('POST', '/api/sync/upload', {
-      records: state.records,
-      customFoods: state.customFoods,
-      targets: state.targets,
-    });
-    console.log('☁️ 已同步到云端');
-  } catch(e){
-    console.log('云端保存失败:', e.message);
-  }
-}
-
-// 自动同步
-function scheduleCloudSync(){
-  if(!apiUser) return;
-  if(syncTimer) clearTimeout(syncTimer);
-  syncTimer = setTimeout(() => {
-    saveCloudData();
-  }, 3000);
-}
-
-// 重写 saveData 以触发云端同步
-const origSaveData = saveData;
-saveData = function(){
-  origSaveData();
-  scheduleCloudSync();
-};
-
-// 尝试恢复登录状态
-(function tryRestoreSession(){
-  const saved = localStorage.getItem('api_user');
-  if(saved){
-    try{
-      apiUser = JSON.parse(saved);
-      updateSyncPanelUI();
-      // 后台加载云端数据
-      setTimeout(() => loadCloudData(), 1000);
-    } catch(e){}
-  }
-})();
 // ===== SERVICE WORKER REGISTRATION =====
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js').then(reg => {
