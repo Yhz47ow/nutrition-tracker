@@ -446,9 +446,26 @@ a{color:var(--green);text-decoration:none}
 <div id="screen-history" class="screen">
   <div class="screen-title">📅 饮食记录</div>
   <div id="historyContent"></div>
+  
+  <!-- 云端同步区域 -->
+  <div style="background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin-top:12px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <span style="font-size:16px">☁️</span>
+      <span style="font-weight:600;font-size:14px">云端同步</span>
+      <span id="syncStatus" style="font-size:11px;color:var(--text2);margin-left:auto">未同步</span>
+    </div>
+    <div style="display:flex;gap:6px">
+      <button class="btn-secondary" style="flex:1;padding:8px 0" onclick="syncToCloud()">☁️ 上传到云端</button>
+      <button class="btn-secondary" style="flex:1;padding:8px 0" onclick="syncFromCloud()">📥 从云端恢复</button>
+    </div>
+    <div style="font-size:11px;color:var(--text2);margin-top:6px;text-align:center">
+      多设备共用同一份数据 · 上传前会合并，不会覆盖
+    </div>
+  </div>
+
   <div class="text-center mt-8 mb-8" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
-    <button class="btn-secondary" style="width:auto;padding:8px 18px;display:inline-block" onclick="exportData()">📤 导出数据</button>
-    <button class="btn-secondary" style="width:auto;padding:8px 18px;display:inline-block" onclick="document.getElementById('importFileInput').click()">📥 导入数据</button>
+    <button class="btn-secondary" style="width:auto;padding:8px 18px;display:inline-block" onclick="exportData()">📤 导出本地文件</button>
+    <button class="btn-secondary" style="width:auto;padding:8px 18px;display:inline-block" onclick="document.getElementById('importFileInput').click()">📥 导入本地文件</button>
     <button class="btn-secondary" style="width:auto;padding:8px 18px;display:inline-block;border-color:#ffcdd2" onclick="clearAllData()">🗑️ 清除</button>
   </div>
   <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importData(event)">
@@ -1519,6 +1536,206 @@ function importData(event){
     }
   };
   reader.readAsText(file);
+}
+
+// ===== CLOUD SYNC (via GitHub Gist) =====
+const GIST_FILENAME = 'nutrition-data.json';
+let syncGistId = localStorage.getItem('nutrition_gist_id') || null;
+let githubToken = localStorage.getItem('nutrition_github_token') || '';
+
+function setSyncStatus(text, isError){
+  const el = document.getElementById('syncStatus');
+  if(el) el.textContent = text;
+  if(el) el.style.color = isError ? '#f44336' : 'var(--green)';
+}
+
+function getGistApiUrl(){
+  return syncGistId ? 'https://api.github.com/gists/' + syncGistId : 'https://api.github.com/gists';
+}
+
+async function gistApi(method, body){
+  if(!githubToken){
+    const token = prompt('请输入你的 GitHub 令牌（Token）：\nhttps://github.com/settings/tokens\n需要勾选 gist 权限');
+    if(!token) throw new Error('需要 Token 才能同步');
+    githubToken = token;
+    localStorage.setItem('nutrition_github_token', token);
+  }
+
+  const opts = {
+    method,
+    headers: {
+      'Authorization': 'token ' + githubToken,
+      'User-Agent': 'nutrition-tracker',
+      'Content-Type': 'application/json',
+    },
+  };
+  if(body) opts.body = JSON.stringify(body);
+
+  const url = getGistApiUrl();
+  const res = await fetch(url, opts);
+  const data = await res.json();
+  if(!res.ok) throw new Error(data.message || 'HTTP ' + res.status);
+  return data;
+}
+
+// 构建要同步的数据
+function buildSyncData(){
+  return {
+    version: 2,
+    lastSync: new Date().toISOString(),
+    records: state.records,
+    customFoods: state.customFoods,
+    targets: state.targets,
+  };
+}
+
+// 合并云端数据到本地
+function mergeCloudData(cloudData){
+  if(!cloudData || !cloudData.records) return false;
+  let count = 0;
+  // 合并 records
+  Object.keys(cloudData.records).forEach(date => {
+    if(!state.records[date]){
+      state.records[date] = {breakfast:[],lunch:[],dinner:[],snack:[]};
+      count++;
+    }
+    MEAL_TYPES.forEach(mt => {
+      const cloudItems = cloudData.records[date][mt] || [];
+      const localItems = state.records[date][mt];
+      // 用 id 去重
+      const localIds = new Set(localItems.map(i => i.id));
+      cloudItems.forEach(item => {
+        if(!localIds.has(item.id)){
+          localItems.push(item);
+          count++;
+        }
+      });
+    });
+  });
+  // 合并自定义食物
+  if(cloudData.customFoods && Array.isArray(cloudData.customFoods)){
+    const existIds = new Set(state.customFoods.map(f => f.id));
+    cloudData.customFoods.forEach(f => {
+      if(!existIds.has(f.id)) state.customFoods.push(f);
+    });
+  }
+  // 合并目标（云端优先）
+  if(cloudData.targets) Object.assign(state.targets, cloudData.targets);
+  return count > 0;
+}
+
+// ☁️ 上传到云端
+async function syncToCloud(){
+  setSyncStatus('⏳ 上传中…');
+  try{
+    const payload = buildSyncData();
+
+    if(syncGistId){
+      // 先下载云端数据合并
+      try{
+        const existing = await gistApi('GET');
+        const content = existing.files?.[GIST_FILENAME]?.content;
+        if(content){
+          const cloudData = JSON.parse(content);
+          // 合并：取本地和云端的并集（本地优先保留自己的记录）
+          const mergedRecords = {...(cloudData.records||{}), ...payload.records};
+          Object.keys(cloudData.records||{}).forEach(date => {
+            if(!mergedRecords[date]) mergedRecords[date] = cloudData.records[date];
+          });
+          payload.records = mergedRecords;
+          // 合并自定义食物
+          const allFoods = [...(cloudData.customFoods||[]), ...payload.customFoods];
+          const seen = new Set();
+          payload.customFoods = allFoods.filter(f => {
+            if(seen.has(f.id)) return false;
+            seen.add(f.id);
+            return true;
+          });
+        }
+      } catch(e){} // 首次上传，没有云端数据
+    }
+
+    const body = {
+      description: '🥗 营养追踪 - 饮食记录同步',
+      public: false,
+      files: { [GIST_FILENAME]: { content: JSON.stringify(payload, null, 2) } },
+    };
+
+    if(syncGistId){
+      await gistApi('PATCH', body);
+    } else {
+      const result = await gistApi('POST', body);
+      syncGistId = result.id;
+      localStorage.setItem('nutrition_gist_id', syncGistId);
+    }
+    setSyncStatus('✅ 已同步 ' + new Date().toLocaleTimeString());
+    alert('☁️ 上传成功！\n\n其他设备点「从云端恢复」即可获取最新数据');
+  } catch(e){
+    setSyncStatus('❌ 同步失败', true);
+    alert('❌ 上传失败：' + e.message);
+  }
+}
+
+// 📥 从云端恢复
+async function syncFromCloud(){
+  if(!syncGistId){
+    // 尝试让用户输入 Gist ID
+    const id = prompt('首次使用，请输入云端 Gist ID：\n（如果没有，请先在一台设备上点「上传到云端」）\n\n或者留空，我帮你查找最近的 Gist');
+    if(id){
+      syncGistId = id.trim();
+      localStorage.setItem('nutrition_gist_id', syncGistId);
+    } else {
+      // 自动查找用户的 Gist
+      try{
+        if(!githubToken){
+          const token = prompt('请输入 GitHub Token：');
+          if(!token) return;
+          githubToken = token;
+          localStorage.setItem('nutrition_github_token', token);
+        }
+        setSyncStatus('⏳ 查找云端数据…');
+        const res = await fetch('https://api.github.com/users/Yhz47ow/gists?per_page=10', {
+          headers: {'Authorization': 'token '+githubToken, 'User-Agent': 'nutrition-tracker'}
+        });
+        const gists = await res.json();
+        const found = gists.find(g => g.files?.[GIST_FILENAME]);
+        if(found){
+          syncGistId = found.id;
+          localStorage.setItem('nutrition_gist_id', syncGistId);
+        } else {
+          alert('❌ 没有找到云端备份。请先在已记录数据的设备上点「上传到云端」');
+          setSyncStatus('未同步');
+          return;
+        }
+      } catch(e){
+        alert('❌ 查找失败：' + e.message);
+        return;
+      }
+    }
+  }
+
+  setSyncStatus('⏳ 下载中…');
+  try{
+    const result = await gistApi('GET');
+    const content = result.files?.[GIST_FILENAME]?.content;
+    if(!content) throw new Error('Gist 中没有找到数据文件');
+
+    const cloudData = JSON.parse(content);
+    const merged = mergeCloudData(cloudData);
+    saveData();
+    setSyncStatus('✅ 已恢复 ' + new Date().toLocaleTimeString());
+    renderHistory();
+    alert('✅ 从云端恢复成功！数据已合并到本地');
+  } catch(e){
+    setSyncStatus('❌ 恢复失败', true);
+    let msg = e.message;
+    if(msg.includes('Not Found')){
+      msg = 'Gist 不存在或已删除，请在「记录」页重新上传';
+      syncGistId = null;
+      localStorage.removeItem('nutrition_gist_id');
+    }
+    alert('❌ 恢复失败：' + msg);
+  }
 }
 
 // ===== RECOMMENDED MEAL SUGGESTION (simple) =====
