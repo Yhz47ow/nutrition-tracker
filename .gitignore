@@ -1,0 +1,5 @@
+# 营养追踪 — Node.js 服务器临时文件
+node_modules/
+*.log
+.DS_Store
+Thumbs.db
