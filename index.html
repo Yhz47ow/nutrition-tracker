@@ -20,12 +20,14 @@
   --bg:#f5f7fa;--card:#fff;--text:#1a1a2e;--text2:#666;--border:#e8ecf1;
   --shadow:0 2px 12px rgba(0,0,0,.08);--radius:16px;
   --safe-bottom:env(safe-area-inset-bottom,0px);
+  --safe-top:env(safe-area-inset-top,0px);
   --c-color:#4CAF50;--p-color:#2196F3;--f-color:#FF9800;
 }
 html{font-size:16px}
 body{
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
   background:var(--bg);color:var(--text);line-height:1.5;
+  padding-top:var(--safe-top);
   padding-bottom:calc(72px + var(--safe-bottom));
   -webkit-font-smoothing:antialiased;overflow-x:hidden;
 }
@@ -37,6 +39,7 @@ a{color:var(--green);text-decoration:none}
 /* ===== HEADER ===== */
 .app-header{
   position:sticky;top:0;z-index:100;
+  top:var(--safe-top, 0);
   background:linear-gradient(135deg,var(--green),var(--green-dark));
   color:#fff;padding:14px 16px 12px;
   display:flex;align-items:center;justify-content:space-between;
