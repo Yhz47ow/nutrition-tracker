@@ -534,7 +534,8 @@ a{color:var(--green);text-decoration:none}
 <div class="modal-overlay" id="customFoodModal">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title">📝 自定义食物</div>
+    <div class="modal-title" id="cfModalTitle">📝 自定义食物</div>
+    <input type="hidden" id="cfEditId" value="">
     <div class="form-group">
       <label>食物名称 *</label>
       <input type="text" id="cfName" placeholder="例如：乳清蛋白粉、即食鸡胸肉">
@@ -542,14 +543,17 @@ a{color:var(--green);text-decoration:none}
     <div class="form-row">
       <div class="form-group">
         <label>📦 单位</label>
-        <input type="text" id="cfUnit" placeholder="勺" value="克" style="width:100%;border:2px solid var(--border);border-radius:10px;padding:10px 12px;font-size:15px;outline:none;background:var(--bg)">
+        <input type="text" id="cfUnit" placeholder="勺" value="克">
       </div>
       <div class="form-group">
-        <label>⚖️ 每份 (g)</label>
+        <label>⚖️ 每份重量 (g)</label>
         <input type="number" id="cfServing" placeholder="100" value="100" step="1">
       </div>
     </div>
-    <p style="font-size:12px;color:#999;margin-bottom:8px">💡 蛋白粉每勺30g，就填单位「勺」、每份「30」</p>
+    <p style="font-size:12px;color:#999;margin-bottom:10px">💡 蛋白粉每勺30g → 单位「勺」、每份「30」</p>
+    
+    <!-- 营养数据（每100g） -->
+    <div style="font-size:14px;font-weight:600;margin-bottom:6px">📊 每100g 营养</div>
     <div class="form-row">
       <div class="form-group">
         <label>🔥 热量 (kcal)</label>
@@ -569,12 +573,27 @@ a{color:var(--green);text-decoration:none}
         <label>🧈 脂肪 (g)</label>
         <input type="number" id="cfFat" placeholder="0" step="0.1">
       </div>
-      <div class="form-group">
-        <label>⚖️ 参考份量 (g)</label>
-        <input type="number" id="cfServing" placeholder="100" value="100" step="1">
+    </div>
+
+    <!-- 计算助手 -->
+    <div style="margin-top:12px;padding:12px;background:#f0f7ff;border-radius:12px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:6px">🧮 实际用量计算</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>实际吃多少 <span id="calcHelperUnitLabel">g</span></label>
+          <input type="number" id="cfCalcActual" placeholder="按每份量自动计算" step="1" oninput="updateCalcHelper()">
+        </div>
+        <div class="form-group">
+          <label>相当于</label>
+          <input type="text" id="cfCalcResult" readonly style="background:#f5f5f5;border-color:#ddd;font-weight:600" placeholder="自动计算">
+        </div>
+      </div>
+      <div id="cfCalcDetail" style="font-size:12px;color:var(--text2);margin-top:4px;min-height:18px">
+        💡 比如一包零食40g，填40，自动算出你实际吃了多少营养
       </div>
     </div>
-    <button class="btn-primary" onclick="saveCustomFood()">✅ 保存食物</button>
+
+    <button class="btn-primary" onclick="saveCustomFood()" id="cfSaveBtn">✅ 保存食物</button>
     <button class="btn-secondary" onclick="closeModal('customFoodModal')">取消</button>
   </div>
 </div>
@@ -1221,7 +1240,7 @@ function saveTargets(){
 }
 
 // ===== SETTINGS: POPULATE WHEN OPENING =====
-// Override openModal for settings to pre-fill
+// Override openModal for settings to pre-fill & custom food reset
 const origOpenModal = openModal;
 openModal = function(id){
   if(id === 'settingsModal'){
@@ -1229,6 +1248,16 @@ openModal = function(id){
     document.getElementById('tCarbs').value = state.targets.carbs;
     document.getElementById('tProtein').value = state.targets.protein;
     document.getElementById('tFat').value = state.targets.fat;
+  }
+  if(id === 'customFoodModal'){
+    const editId = document.getElementById('cfEditId').value;
+    if(!editId){
+      document.getElementById('cfModalTitle').textContent = '📝 自定义食物';
+      document.getElementById('cfSaveBtn').textContent = '✅ 保存食物';
+      document.getElementById('cfCalcActual').value = '';
+      document.getElementById('cfCalcResult').value = '';
+      document.getElementById('cfCalcDetail').textContent = '💡 比如一包零食40g，填40，自动算出你实际吃了多少营养';
+    }
   }
   origOpenModal(id);
 };
@@ -1502,8 +1531,9 @@ function searchOpenFoodFacts(query){
     });
 }
 
-// ===== CUSTOM FOOD =====
+// ===== CUSTOM FOOD (新增 / 编辑) =====
 function saveCustomFood(){
+  const editId = document.getElementById('cfEditId').value;
   const name = document.getElementById('cfName').value.trim();
   const cal = parseFloat(document.getElementById('cfCalories').value) || 0;
   const carbs = parseFloat(document.getElementById('cfCarbs').value) || 0;
@@ -1515,28 +1545,92 @@ function saveCustomFood(){
   if(!name){ alert('请输入食物名称'); return; }
   if(cal===0 && carbs===0 && protein===0 && fat===0){ alert('请至少输入一项营养数据'); return; }
 
-  const id = 'custom_'+Date.now()+'_'+Math.random().toString(36).substr(2,4);
-  state.customFoods.push({
-    id, name, unit, caloriesPer100g: cal, carbsPer100g: carbs,
-    proteinPer100g: protein, fatPer100g: fat, servingSize: serving, source: 'custom'
-  });
+  if(editId){
+    // 编辑模式
+    const idx = state.customFoods.findIndex(f => f.id === editId);
+    if(idx >= 0){
+      state.customFoods[idx] = { ...state.customFoods[idx], name, unit, 
+        caloriesPer100g: cal, carbsPer100g: carbs, proteinPer100g: protein, fatPer100g: fat, servingSize: serving };
+    }
+  } else {
+    // 新增模式
+    const id = 'custom_'+Date.now()+'_'+Math.random().toString(36).substr(2,4);
+    state.customFoods.push({
+      id, name, unit, caloriesPer100g: cal, carbsPer100g: carbs,
+      proteinPer100g: protein, fatPer100g: fat, servingSize: serving, source: 'custom'
+    });
+  }
   saveData();
 
   // Reset form
+  document.getElementById('cfEditId').value = '';
   document.getElementById('cfName').value = '';
   document.getElementById('cfCalories').value = '';
   document.getElementById('cfCarbs').value = '';
   document.getElementById('cfProtein').value = '';
   document.getElementById('cfFat').value = '';
   document.getElementById('cfServing').value = '100';
+  document.getElementById('cfCalcActual').value = '';
+  document.getElementById('cfCalcResult').value = '';
+  document.getElementById('cfCalcDetail').textContent = '💡 比如一包零食40g，填40，自动算出你实际吃了多少营养';
 
   closeModal('customFoodModal');
-  // Show feedback
   showScreen('search');
   document.getElementById('searchInput').value = name;
   switchSearchTab('custom');
 }
 
+// ===== 编辑自定义食物 =====
+function editCustomFood(id){
+  const food = state.customFoods.find(f => f.id === id);
+  if(!food) return;
+  
+  document.getElementById('cfEditId').value = food.id;
+  document.getElementById('cfModalTitle').textContent = '✏️ 编辑食物';
+  document.getElementById('cfSaveBtn').textContent = '✅ 更新食物';
+  document.getElementById('cfName').value = food.name;
+  document.getElementById('cfUnit').value = food.unit || '克';
+  document.getElementById('cfCalories').value = food.caloriesPer100g;
+  document.getElementById('cfCarbs').value = food.carbsPer100g;
+  document.getElementById('cfProtein').value = food.proteinPer100g;
+  document.getElementById('cfFat').value = food.fatPer100g;
+  document.getElementById('cfServing').value = food.servingSize || 100;
+  
+  openModal('customFoodModal');
+}
+
+// ===== 计算助手 =====
+function updateCalcHelper(){
+  const cal = parseFloat(document.getElementById('cfCalories').value) || 0;
+  const carbs = parseFloat(document.getElementById('cfCarbs').value) || 0;
+  const protein = parseFloat(document.getElementById('cfProtein').value) || 0;
+  const fat = parseFloat(document.getElementById('cfFat').value) || 0;
+  const actual = parseFloat(document.getElementById('cfCalcActual').value) || 0;
+  const unit = document.getElementById('cfUnit').value.trim() || 'g';
+  const detail = document.getElementById('cfCalcDetail');
+  const result = document.getElementById('cfCalcResult');
+  
+  if(actual <= 0 || (cal===0 && carbs===0 && protein===0 && fat===0)){
+    result.value = '';
+    detail.textContent = '💡 比如一包零食40g，填40，自动算出你实际吃了多少营养';
+    return;
+  }
+  
+  const ratio = actual / 100;
+  const rCal = Math.round(cal * ratio * 10) / 10;
+  const rCarbs = Math.round(carbs * ratio * 10) / 10;
+  const rProtein = Math.round(protein * ratio * 10) / 10;
+  const rFat = Math.round(fat * ratio * 10) / 10;
+  
+  result.value = `🔥${rCal}kcal · 🥖${rCarbs}g · 🥩${rProtein}g · 🧈${rFat}g`;
+  detail.innerHTML = `📊 每100g → 你吃<strong>${actual}${unit}</strong> = 🔥${rCal}kcal | 🥖${rCarbs}g | 🥩${rProtein}g | 🧈${rFat}g`;
+  
+  // Auto-fill serving if user hasn't set it
+  const servingEl = document.getElementById('cfServing');
+  if(servingEl.value == '100' && actual > 0) servingEl.value = Math.round(actual);
+}
+
+// 自定义食物弹窗打开时重置编辑状态
 // ===== DELETE CUSTOM FOOD =====
 function deleteCustomFood(id){
   if(!confirm('确定删除该自定义食物吗？')) return;
@@ -1590,15 +1684,21 @@ function renderLibrary(tab){
 }
 
 function renderLibItem(food, tab){
+  const unit = food.unit || 'g';
+  const serving = food.servingSize || 100;
   return `<div class="food-list-item" onclick="${tab==='custom'?'':'selectFoodForGram(\''+food.id+'\',\''+food.source+'\')'}">
     <span class="fli-name">${food.name}</span>
-    ${tab==='custom'?`<button class="food-del" onclick="event.stopPropagation();deleteCustomFood('${food.id}')" style="border:none;background:none;color:#ccc;cursor:pointer;font-size:14px">✕</button>`:''}
+    <div style="display:flex;gap:3px;flex-shrink:0">
+      ${tab==='custom'?`<button class="food-del" onclick="event.stopPropagation();editCustomFood('${food.id}')" style="border:none;background:none;color:#2196F3;cursor:pointer;font-size:13px;padding:2px">✏️</button>`:''}
+      ${tab==='custom'?`<button class="food-del" onclick="event.stopPropagation();deleteCustomFood('${food.id}')" style="border:none;background:none;color:#ccc;cursor:pointer;font-size:14px">✕</button>`:''}
+    </div>
     <div class="fli-macros">
       <span>🔥${Math.round(food.caloriesPer100g)}</span>
       <span>🥖${food.carbsPer100g}g</span>
       <span>🥩${food.proteinPer100g}g</span>
       <span>🧈${food.fatPer100g}g</span>
     </div>
+    ${tab==='custom'?`<div style="font-size:10px;color:#999;flex-shrink:0">${serving}g/${unit}</div>`:''}
   </div>`;
 }
 
