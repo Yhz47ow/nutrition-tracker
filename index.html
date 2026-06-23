@@ -113,7 +113,7 @@ a{color:var(--green);text-decoration:none}
   margin-bottom:14px;display:flex;align-items:center;gap:16px;
 }
 .macro-ring{flex-shrink:0;width:120px;height:120px}
-.macro-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.macro-ring svg{width:100%;height:100%}
 .macro-legend{flex:1;min-width:0}
 .macro-legend-item{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:13px}
 .macro-legend-item .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
@@ -381,11 +381,12 @@ a{color:var(--green);text-decoration:none}
     <div class="macro-ring" id="macroRing">
       <svg viewBox="0 0 120 120">
         <circle cx="60" cy="60" r="50" fill="none" stroke="#eee" stroke-width="14"/>
-        <circle cx="60" cy="60" r="50" fill="none" stroke="var(--c-color)" stroke-width="14" stroke-dasharray="0 314" stroke-linecap="round" id="arcCarbs"/>
-        <circle cx="60" cy="60" r="50" fill="none" stroke="var(--p-color)" stroke-width="14" stroke-dasharray="0 314" stroke-linecap="round" id="arcProtein" transform="rotate(0 60 60)"/>
-        <circle cx="60" cy="60" r="50" fill="none" stroke="var(--f-color)" stroke-width="14" stroke-dasharray="0 314" stroke-linecap="round" id="arcFat" transform="rotate(0 60 60)"/>
-        <text x="60" y="56" text-anchor="middle" font-size="22" font-weight="700" fill="var(--text)"><tspan id="ringPctCarbs">0%</tspan></text>
-        <text x="60" y="72" text-anchor="middle" font-size="10" fill="var(--text2)">碳水</text>
+        <g transform="rotate(-90 60 60)">
+          <circle cx="60" cy="60" r="50" fill="none" stroke="var(--c-color)" stroke-width="14" stroke-dasharray="0 314" id="arcCarbs"/>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="var(--p-color)" stroke-width="14" stroke-dasharray="0 314" id="arcProtein"/>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="var(--f-color)" stroke-width="14" stroke-dasharray="0 314" id="arcFat"/>
+        </g>
+        <text x="60" y="72" text-anchor="middle" font-size="16" font-weight="700" fill="var(--text)"><tspan id="ringPctCarbs">0%</tspan></text>
       </svg>
     </div>
     <div class="macro-legend">
@@ -411,9 +412,20 @@ a{color:var(--green);text-decoration:none}
 
   <!-- 推荐食物 -->
   <div class="rec-section" id="recSection">
-    <div class="rec-title">💡 推荐食物 <span style="font-size:11px;font-weight:400;color:var(--text2)">基于剩余配额智能推荐</span></div>
+    <div class="rec-title">💡 智能推荐 <span style="font-size:11px;font-weight:400;color:var(--text2)" id="recRemainLabel">剩余：计算中</span></div>
     <div class="rec-tagline" id="recTagline">还缺 🥖 碳水 · 快来补充吧</div>
     <div id="recList" class="rec-list"></div>
+    
+    <!-- 自定义推荐计算器 -->
+    <div style="margin-top:10px;padding-top:10px;border-top:1px dashed rgba(0,0,0,.1)">
+      <div style="font-size:13px;font-weight:600;margin-bottom:6px">🔢 指定食物计算</div>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="calcFoodInput" placeholder="输入食物名称搜索…" style="flex:1;border:1px solid #ddd;border-radius:8px;padding:8px 10px;font-size:14px;outline:none" onkeydown="if(event.key==='Enter') calcFoodRecommend()">
+        <button onclick="calcFoodRecommend()" style="background:var(--green);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;white-space:nowrap">计算</button>
+      </div>
+      <div id="calcFoodResult" style="margin-top:6px;font-size:13px;color:var(--text2);min-height:20px"></div>
+      <div id="calcFoodList" style="margin-top:4px;font-size:12px"></div>
+    </div>
   </div>
 
   <!-- Meals -->
@@ -525,13 +537,19 @@ a{color:var(--green);text-decoration:none}
     <div class="modal-title">📝 自定义食物</div>
     <div class="form-group">
       <label>食物名称 *</label>
-      <input type="text" id="cfName" placeholder="例如：优形鸡胸肉、全麦面包">
+      <input type="text" id="cfName" placeholder="例如：乳清蛋白粉、即食鸡胸肉">
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label>每100g</label>
+        <label>📦 单位</label>
+        <input type="text" id="cfUnit" placeholder="勺" value="克" style="width:100%;border:2px solid var(--border);border-radius:10px;padding:10px 12px;font-size:15px;outline:none;background:var(--bg)">
+      </div>
+      <div class="form-group">
+        <label>⚖️ 每份 (g)</label>
+        <input type="number" id="cfServing" placeholder="100" value="100" step="1">
       </div>
     </div>
+    <p style="font-size:12px;color:#999;margin-bottom:8px">💡 蛋白粉每勺30g，就填单位「勺」、每份「30」</p>
     <div class="form-row">
       <div class="form-group">
         <label>🔥 热量 (kcal)</label>
@@ -568,13 +586,13 @@ a{color:var(--green);text-decoration:none}
     <div class="gram-input-content">
       <div class="food-name-display" id="giFoodName">食物名</div>
       <div class="macro-preview" id="giMacroPreview">每100g: 0kcal | 碳水0g 蛋白0g 脂肪0g</div>
-      <p style="font-size:13px;color:var(--text2);margin-bottom:8px">输入食用量（克）：</p>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:8px">输入食用量（<span id="gramUnitLabel">g</span>）：</p>
       <div class="gram-control">
         <button onclick="adjustGram(-10)">−</button>
-        <span class="gram-value" id="giGram">100</span>
+        <input type="number" id="giGram" value="100" min="1" max="9999" step="1" style="font-size:28px;font-weight:700;width:80px;text-align:center;border:none;background:transparent;outline:none;-moz-appearance:textfield" onchange="updateGramPreview()" oninput="updateGramPreview()">
         <button onclick="adjustGram(10)">+</button>
       </div>
-      <div class="gram-presets">
+      <div class="gram-presets" id="gramPresets">
         <button onclick="setGram(50)">50g</button>
         <button onclick="setGram(100)">100g</button>
         <button onclick="setGram(150)">150g</button>
@@ -883,23 +901,29 @@ function renderDashboard(){
   const pctP = totalMacroG > 0 ? Math.round(totalP/totalMacroG*100) : 0;
   const pctF = totalMacroG > 0 ? Math.round(totalF/totalMacroG*100) : 0;
 
-  const circumference = 314; // 2*pi*50
+  const circumference = 314;
   const arcC = (pctC/100)*circumference;
   const arcP = (pctP/100)*circumference;
   const arcF = (pctF/100)*circumference;
-
-  // Carbs arc starts at 0
+  // All arcs start from top (0°). Carbs first, then protein, then fat.
   const arcCarbs = document.getElementById('arcCarbs');
   arcCarbs.setAttribute('stroke-dasharray', `${arcC} ${circumference-arcC}`);
-  // Protein arc starts after carbs
+  // Remove any transform
+  arcCarbs.setAttribute('transform', '');
+  
   const arcProtein = document.getElementById('arcProtein');
-  const offsetP = (pctC/100)*circumference;
+  // Protein starts where carbs end
+  const proteinDeg = pctC * 3.6;
   arcProtein.setAttribute('stroke-dasharray', `${arcP} ${circumference-arcP}`);
-  arcProtein.setAttribute('transform', `rotate(${pctC*3.6} 60 60)`);
-  // Fat arc starts after carbs+protein
+  arcProtein.setAttribute('transform', `rotate(${proteinDeg} 60 60)`);
+  
   const arcFat = document.getElementById('arcFat');
+  // Fat starts where carbs+protein end
+  const fatDeg = (pctC + pctP) * 3.6;
   arcFat.setAttribute('stroke-dasharray', `${arcF} ${circumference-arcF}`);
-  arcFat.setAttribute('transform', `rotate(${(pctC+pctP)*3.6} 60 60)`);
+  arcFat.setAttribute('transform', `rotate(${fatDeg} 60 60)`);
+
+  document.getElementById('ringPctCarbs').textContent = pctC+'%';
 
   document.getElementById('ringPctCarbs').textContent = pctC+'%';
 
@@ -1085,6 +1109,101 @@ function quickAddRec(foodId, source, grams){
   renderDashboard();
 }
 
+// ===== 指定食物推荐计算器 =====
+function calcFoodRecommend(){
+  const input = document.getElementById('calcFoodInput');
+  const result = document.getElementById('calcFoodResult');
+  const list = document.getElementById('calcFoodList');
+  const query = input.value.trim().toLowerCase();
+  
+  if(!query){
+    result.innerHTML = '请输入食物名称';
+    list.innerHTML = '';
+    return;
+  }
+
+  // 计算今日剩余营养
+  const dateStr = state.currentDate;
+  const records = getTodayRecords(dateStr);
+  let totalC = 0, totalP = 0, totalF = 0, totalCal = 0;
+  MEAL_TYPES.forEach(mt => records[mt].forEach(i => { totalC += i.carbs; totalP += i.protein; totalF += i.fat; totalCal += i.calories; }));
+  
+  const remainC = Math.round((state.targets.carbs - totalC) * 10) / 10;
+  const remainP = Math.round((state.targets.protein - totalP) * 10) / 10;
+  const remainF = Math.round((state.targets.fat - totalF) * 10) / 10;
+  const remainCal = Math.round((state.targets.calories - totalCal) * 10) / 10;
+
+  // 搜索食物
+  const allFoods = getAllFoods();
+  const matches = allFoods.filter(f => f.name.toLowerCase().includes(query));
+  
+  if(matches.length === 0){
+    result.innerHTML = '❌ 没有找到「' + query + '」，试试其他关键词或先自定义食物';
+    list.innerHTML = '';
+    return;
+  }
+  
+  // 显示剩余营养
+  result.innerHTML = `<span style="font-weight:600;color:var(--text)">剩余配额：</span> 🔥${remainCal}kcal · 🥖${remainC}g · 🥩${remainP}g · 🧈${remainF}g`;
+  
+  // 显示每个匹配食物的推荐克数
+  let html = '';
+  matches.slice(0, 8).forEach(food => {
+    const c = food.carbsPer100g;
+    const p = food.proteinPer100g;
+    const ff = food.fatPer100g;
+    const cal = food.caloriesPer100g;
+    
+    // 计算推荐克数：根据最缺的营养素来算
+    let maxGram = 500; // 上限
+    let suggestion = '';
+    let suggestedGram = 100;
+    
+    // 检查各种限制
+    let byCal = cal > 0 ? Math.floor(remainCal / cal * 100) : 500;
+    let byC = c > 0 && remainC > 0 ? Math.floor(remainC / c * 100) : 500;
+    let byP = p > 0 && remainP > 0 ? Math.floor(remainP / p * 100) : 500;
+    let byF = ff > 0 && remainF > 0 ? Math.floor(remainF / ff * 100) : 500;
+    
+    maxGram = Math.min(byCal, byC, byP, byF, 500);
+    maxGram = Math.max(maxGram, 0);
+    
+    // 找最缺的营养来决定建议
+    const deficits = [
+      {key:'碳水', val: remainC, per100: c},
+      {key:'蛋白', val: remainP, per100: p},
+      {key:'脂肪', val: remainF, per100: ff},
+    ].filter(d => d.val > 0 && d.per100 > 0).sort((a,b) => b.val - a.val);
+    
+    if(deficits.length > 0 && maxGram > 0){
+      suggestedGram = Math.min(maxGram, Math.ceil(deficits[0].val / deficits[0].per100 * 100 / 10) * 10);
+      suggestedGram = Math.max(suggestedGram, 10);
+      suggestion = `推荐 <strong>${suggestedGram}g</strong>（补充${deficits[0].key}）`;
+    } else if(maxGram <= 0) {
+      suggestion = `<span style="color:#999">今日已达标</span>`;
+    } else {
+      suggestedGram = Math.min(100, maxGram);
+      suggestion = `推荐 <strong>${suggestedGram}g</strong>`;
+    }
+
+    const macroStr = `🔥${Math.round(cal)} 🥖${c}g 🥩${p}g 🧈${ff}g`;
+    const afterStr = maxGram > 0 ? `≈ 🔥${Math.round(cal/100*suggestedGram)} 🥖${Math.round(c/100*suggestedGram)}g 🥩${Math.round(p/100*suggestedGram)}g 🧈${Math.round(ff/100*suggestedGram)}g` : '';
+    
+    html += `<div class="rec-item" onclick="quickAddRec('${food.id}','${food.source||'builtin'}',${suggestedGram})">
+      <span class="rec-name">${food.name}</span>
+      <span style="font-size:11px;color:var(--text2);text-align:right">
+        <div>${macroStr}/100g</div>
+        <div style="font-weight:600;color:var(--green)">${suggestion}</div>
+        <div style="font-size:10px;color:#999">${afterStr}</div>
+      </span>
+      <button class="rec-add" onclick="event.stopPropagation();quickAddRec('${food.id}','${food.source||'builtin'}',${suggestedGram})">➕</button>
+    </div>`;
+  });
+  
+  if(matches.length > 8) html += `<div style="text-align:center;font-size:11px;color:#999;margin-top:4px">…还有 ${matches.length-8} 个匹配结果</div>`;
+  list.innerHTML = html;
+}
+
 // ===== SETTINGS: SAVE TARGETS =====
 function saveTargets(){
   const cal = parseFloat(document.getElementById('tCalories').value) || state.targets.calories;
@@ -1225,12 +1344,44 @@ function selectFoodForGram(foodId, source){
   state.pendingFood = { food, source };
 
   document.getElementById('giFoodName').textContent = food.name;
-  document.getElementById('giMacroPreview').textContent =
-    `每100g: ${Math.round(food.caloriesPer100g)}kcal | 🥖碳水${food.carbsPer100g}g 🥩蛋白${food.proteinPer100g}g 🧈脂肪${food.fatPer100g}g`;
+  
+  // Show unit info for custom foods
+  const unit = food.unit || 'g';
+  const servingSize = food.servingSize || 100;
+  const macroPreview = `每100g: ${Math.round(food.caloriesPer100g)}kcal | 🥖碳水${food.carbsPer100g}g 🥩蛋白${food.proteinPer100g}g 🧈脂肪${food.fatPer100g}g`;
+  document.getElementById('giMacroPreview').textContent = macroPreview;
 
-  // Default gram = servingSize or 100
-  const defaultGram = food.servingSize || 100;
-  document.getElementById('giGram').textContent = defaultGram;
+  // Default gram = servingSize
+  const defaultGram = servingSize;
+  document.getElementById('giGram').value = defaultGram;
+
+  // Update the label to show unit
+  const unitLabel = document.querySelector('.gram-control-label');
+  if(unitLabel) unitLabel.textContent = unit;
+  
+  // Set serving-based presets for custom units
+  const presetsEl = document.getElementById('gramPresets');
+  if(presetsEl){
+    if(unit !== 'g' && unit !== '克' && servingSize > 0){
+      presetsEl.innerHTML = `
+        <button onclick="setGram(${servingSize})">1${unit}</button>
+        <button onclick="setGram(${servingSize*2})">2${unit}</button>
+        <button onclick="setGram(${servingSize*3})">3${unit}</button>
+        <button onclick="setGram(${Math.round(servingSize*0.5)})">½${unit}</button>
+        <button onclick="setGram(${Math.round(servingSize*1.5)})">1.5${unit}</button>
+        <button onclick="setGram(${servingSize*4})">4${unit}</button>
+      `;
+    } else {
+      presetsEl.innerHTML = `
+        <button onclick="setGram(50)">50g</button>
+        <button onclick="setGram(100)">100g</button>
+        <button onclick="setGram(150)">150g</button>
+        <button onclick="setGram(200)">200g</button>
+        <button onclick="setGram(250)">250g</button>
+        <button onclick="setGram(300)">300g</button>
+      `;
+    }
+  }
 
   // Highlight the target meal
   document.querySelectorAll('#giMealSelector button').forEach(b=>b.classList.remove('active'));
@@ -1242,22 +1393,36 @@ function selectFoodForGram(foodId, source){
 }
 
 function setGram(v){
-  document.getElementById('giGram').textContent = Math.max(1, Math.round(v));
+  document.getElementById('giGram').value = Math.max(1, Math.round(v));
   updateGramPreview();
 }
 function adjustGram(delta){
-  const cur = parseInt(document.getElementById('giGram').textContent) || 100;
+  const cur = parseInt(document.getElementById('giGram').value) || 100;
   const next = Math.max(1, cur + delta);
-  document.getElementById('giGram').textContent = next;
+  document.getElementById('giGram').value = next;
   updateGramPreview();
 }
 function updateGramPreview(){
   const food = state.pendingFood?.food;
   if(!food) return;
-  const grams = parseInt(document.getElementById('giGram').textContent) || 100;
+  const grams = parseInt(document.getElementById('giGram').value) || 100;
   const macros = calcMacrosForGram(food, grams);
+  
+  // Show unit info for custom foods
+  const unit = food.unit || 'g';
+  const servingSize = food.servingSize || 100;
+  let unitStr = '';
+  if(unit !== 'g' && unit !== '克' && servingSize > 0){
+    const servings = Math.round(grams / servingSize * 10) / 10;
+    unitStr = ` &nbsp;|&nbsp; 📦 ${servings}${unit}`;
+  }
+  
   document.getElementById('giMacroResult').innerHTML =
-    `🔥 ${macros.calories}kcal &nbsp;|&nbsp; 🥖碳水 ${macros.carbs}g &nbsp;|&nbsp; 🥩蛋白 ${macros.protein}g &nbsp;|&nbsp; 🧈脂肪 ${macros.fat}g`;
+    `🔥 ${macros.calories}kcal &nbsp;|&nbsp; 🥖碳水 ${macros.carbs}g &nbsp;|&nbsp; 🥩蛋白 ${macros.protein}g &nbsp;|&nbsp; 🧈脂肪 ${macros.fat}g${unitStr}`;
+  
+  // Update unit label
+  const label = document.getElementById('gramUnitLabel');
+  if(label) label.textContent = unit;
 }
 
 // Meal selector in gram modal
@@ -1272,7 +1437,7 @@ document.addEventListener('click', function(e){
 function confirmAddFood(){
   const food = state.pendingFood?.food;
   if(!food) return;
-  const grams = parseInt(document.getElementById('giGram').textContent) || 100;
+  const grams = parseInt(document.getElementById('giGram').value) || 100;
   const macros = calcMacrosForGram(food, grams);
 
   // Get selected meal
@@ -1345,13 +1510,14 @@ function saveCustomFood(){
   const protein = parseFloat(document.getElementById('cfProtein').value) || 0;
   const fat = parseFloat(document.getElementById('cfFat').value) || 0;
   const serving = parseInt(document.getElementById('cfServing').value) || 100;
+  const unit = document.getElementById('cfUnit').value.trim() || '克';
 
   if(!name){ alert('请输入食物名称'); return; }
   if(cal===0 && carbs===0 && protein===0 && fat===0){ alert('请至少输入一项营养数据'); return; }
 
   const id = 'custom_'+Date.now()+'_'+Math.random().toString(36).substr(2,4);
   state.customFoods.push({
-    id, name, caloriesPer100g: cal, carbsPer100g: carbs,
+    id, name, unit, caloriesPer100g: cal, carbsPer100g: carbs,
     proteinPer100g: protein, fatPer100g: fat, servingSize: serving, source: 'custom'
   });
   saveData();
