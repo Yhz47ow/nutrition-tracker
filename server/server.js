@@ -12,7 +12,13 @@ const fs = require('fs');
 const path = require('path');
 
 // ===== 配置 =====
-const JWT_SECRET = process.env.JWT_SECRET || 'nutrition_tracker_secret_key_2024';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('\u26a0\ufe0f \u4e25\u91cd\u5b89\u5168\u8b66\u544a: \u672a\u8bbe\u7f6e JWT_SECRET \u73af\u5883\u53d8\u91cf\uff01');
+  console.error('   \u4f7f\u7528\u4e34\u65f6\u968f\u673a\u5bc6\u94a5\u542f\u52a8\uff08\u91cd\u542f\u540e\u6240\u6709\u767b\u5f55\u5c06\u5931\u6548\uff09');
+  process.env.JWT_SECRET = require('crypto').randomBytes(32).toString('hex');
+}
+const JWT_SECRET_FINAL = process.env.JWT_SECRET;
 const PORT = process.env.PORT || 3000;
 const DB_PATH = path.join(__dirname, 'data.db');
 const ALLOWED_ORIGINS = [
@@ -105,7 +111,7 @@ app.use(cors({
     if (!origin || ALLOWED_ORIGINS.includes(origin)) {
       callback(null, true);
     } else {
-      callback(null, true); // 允许所有来源（方便调试）
+      callback(new Error('CORS: origin ' + origin + ' not allowed'), false)
     }
   },
   credentials: true,
@@ -217,60 +223,69 @@ app.post('/api/sync/upload', authMiddleware, (req, res) => {
     const userId = req.userId;
     const { records, customFoods, targets } = req.body;
 
-    // 删除旧数据
-    db.run("DELETE FROM food_records WHERE user_id = ?", [userId]);
-    db.run("DELETE FROM custom_foods WHERE user_id = ?", [userId]);
+    // \u4f7f\u7528\u4e8b\u52a1\u4fdd\u62a4\u6570\u636e\u5b8c\u6574\u6027
+    db.run("BEGIN");
+    try {
+      // \u5220\u9664\u65e7\u6570\u636e
+      db.run("DELETE FROM food_records WHERE user_id = ?", [userId]);
+      db.run("DELETE FROM custom_foods WHERE user_id = ?", [userId]);
 
-    // 插入饮食记录
-    if (records) {
-      const insertStmt = db.prepare(`
-        INSERT INTO food_records (user_id, client_id, date, meal_type, food_name, grams, calories, protein, carbs, fat)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
-      Object.keys(records).forEach(date => {
-        ['breakfast', 'lunch', 'dinner', 'snack'].forEach(mt => {
-          (records[date][mt] || []).forEach(item => {
-            insertStmt.run([
-              userId, item.id || '', date, mt, item.foodName || '',
-              item.grams || 0, item.calories || 0, item.protein || 0,
-              item.carbs || 0, item.fat || 0,
-            ]);
+      // \u63d2\u5165\u996e\u98df\u8bb0\u5f55
+      if (records) {
+        const insertStmt = db.prepare(`
+          INSERT INTO food_records (user_id, client_id, date, meal_type, food_name, grams, calories, protein, carbs, fat)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        Object.keys(records).forEach(date => {
+          ['breakfast', 'lunch', 'dinner', 'snack'].forEach(mt => {
+            (records[date][mt] || []).forEach(item => {
+              insertStmt.run([
+                userId, item.id || '', date, mt, item.foodName || '',
+                item.grams || 0, item.calories || 0, item.protein || 0,
+                item.carbs || 0, item.fat || 0,
+              ]);
+            });
           });
         });
-      });
-      insertStmt.free();
-    }
-
-    // 插入自定义食物
-    if (customFoods && Array.isArray(customFoods)) {
-      const insertCustom = db.prepare(`
-        INSERT INTO custom_foods (id, user_id, name, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, serving_size)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `);
-      customFoods.forEach(f => {
-        insertCustom.run([
-          f.id, userId, f.name || '',
-          f.caloriesPer100g || 0, f.proteinPer100g || 0,
-          f.carbsPer100g || 0, f.fatPer100g || 0,
-          f.servingSize || 100,
-        ]);
-      });
-      insertCustom.free();
-    }
-
-    // 更新目标
-    if (targets) {
-      const targetStmt = db.prepare("SELECT user_id FROM targets WHERE user_id = ?");
-      targetStmt.bind([userId]);
-      if (targetStmt.step()) {
-        targetStmt.free();
-        db.run("UPDATE targets SET calories=?, carbs=?, protein=?, fat=? WHERE user_id=?", 
-          [targets.calories || 1600, targets.carbs || 160, targets.protein || 120, targets.fat || 44, userId]);
-      } else {
-        targetStmt.free();
-        db.run("INSERT INTO targets (user_id, calories, carbs, protein, fat) VALUES (?, ?, ?, ?, ?)",
-          [userId, targets.calories || 1600, targets.carbs || 160, targets.protein || 120, targets.fat || 44]);
+        insertStmt.free();
       }
+
+      // \u63d2\u5165\u81ea\u5b9a\u4e49\u98df\u7269
+      if (customFoods && Array.isArray(customFoods)) {
+        const insertCustom = db.prepare(`
+          INSERT INTO custom_foods (id, user_id, name, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, serving_size)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        customFoods.forEach(f => {
+          insertCustom.run([
+            f.id, userId, f.name || '',
+            f.caloriesPer100g || 0, f.proteinPer100g || 0,
+            f.carbsPer100g || 0, f.fatPer100g || 0,
+            f.servingSize || 100,
+          ]);
+        });
+        insertCustom.free();
+      }
+
+      // \u66f4\u65b0\u76ee\u6807
+      if (targets) {
+        const targetStmt = db.prepare("SELECT user_id FROM targets WHERE user_id = ?");
+        targetStmt.bind([userId]);
+        if (targetStmt.step()) {
+          targetStmt.free();
+          db.run("UPDATE targets SET calories=?, carbs=?, protein=?, fat=? WHERE user_id=?", 
+            [targets.calories || 1600, targets.carbs || 160, targets.protein || 120, targets.fat || 44, userId]);
+        } else {
+          targetStmt.free();
+          db.run("INSERT INTO targets (user_id, calories, carbs, protein, fat) VALUES (?, ?, ?, ?, ?)",
+            [userId, targets.calories || 1600, targets.carbs || 160, targets.protein || 120, targets.fat || 44]);
+        }
+      }
+
+      db.run("COMMIT");
+    } catch (innerErr) {
+      db.run("ROLLBACK");
+      throw innerErr;
     }
 
     saveDB();
@@ -335,15 +350,21 @@ app.get('/api/sync/download', authMiddleware, (req, res) => {
   }
 });
 
-// ===== 启动 =====
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ 营养追踪服务器启动成功`);
-  console.log(`   http://localhost:${PORT}`);
-  console.log(`   API: http://localhost:${PORT}/api/health`);
-});
+// ===== 先初始化数据库，再启动服务器 =====
+async function startServer() {
+  try {
+    await initDB();
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🎉 营养追踪服务器启动成功！`);
+      console.log(`   http://localhost:${PORT}`);
+      console.log(`   API: http://localhost:${PORT}/api/health`);
+    });
+  } catch (e) {
+    console.error('💬 数据库初始化失败:', e.message);
+    process.exit(1);
+  }
+}
 
-// 初始化数据库
-initDB().catch(e => {
-  console.error('❌ 数据库初始化失败:', e.message);
-  process.exit(1);
-});
+startServer();
+
+

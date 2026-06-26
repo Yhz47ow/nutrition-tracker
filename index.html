@@ -1321,8 +1321,11 @@ function doSearch(){
 
   if(currentSearchTab === 'online'){
     if(!query){ resultsEl.innerHTML = `<div class="search-status">请输入食物名称</div>`; return; }
-    resultsEl.innerHTML = `<div class="search-status">🔍 正在搜索 "${query}"…</div>`;
-    searchOpenFoodFacts(query);
+    if(window._searchTimer)clearTimeout(window._searchTimer);
+    window._searchTimer=setTimeout(()=>{
+      resultsEl.innerHTML = `<div class="search-status">🔍 正在搜索 "${query}"…</div>`;
+      searchOpenFoodFacts(query);
+    },400);
     return;
   }
 
@@ -1732,7 +1735,7 @@ function renderHistory(){
     let mealsStr = MEAL_TYPES.map(mt => {
       const items = records[mt];
       if(items.length === 0) return '';
-      return items.map(i => i.foodName).join(', ');
+      return items.map((i,idx) => `<span style="display:inline-flex;align-items:center;gap:2px;margin:1px 2px;padding:1px 4px;background:#f0f0f0;border-radius:4px;white-space:nowrap;font-size:12px">${i.foodName||i.name} <span onclick="event.stopPropagation();deleteFoodItem('${dateStr}','${mt}',${idx});renderHistory();" style="cursor:pointer;color:#e00;opacity:.6;font-size:11px;margin-left:2px">&times;</span></span>`);
     }).filter(s=>s).join(' | ');
 
     html += `<div class="history-day">
@@ -1819,8 +1822,12 @@ function getDietSuggestion(){}
 
 // ===== GITHUB GIST 云同步（免费·无需服务器）=====
 const GIST_FILENAME = 'nutrition-data.json';
-let syncGistId = localStorage.getItem('nutrition_gist_id') || null;
-let githubToken = localStorage.getItem('nutrition_github_token') || '';
+let syncGistId = null;
+let githubToken = '';
+try{
+  syncGistId = localStorage.getItem('nutrition_gist_id') || null;
+  githubToken = localStorage.getItem('nutrition_github_token') || '';
+}catch(e){}
 
 function updateSyncPanelUI(){
   const loggedOut=document.getElementById('syncLoggedOut');
@@ -1841,7 +1848,8 @@ function updateSyncPanelUI(){
 }
 
 function setupGistSync(){
-  const existing=localStorage.getItem('nutrition_github_token')||'';
+  let existing='';
+  try{existing=localStorage.getItem('nutrition_github_token')||'';}catch(e){}
   const token=prompt('☁️ GitHub 云同步\n\n把你的 GitHub Token 粘贴在这里\n（在 github.com/settings/tokens 创建，勾选 gist 权限）\n\n创建地址：\nhttps://github.com/settings/tokens\n\n粘贴 Token：',existing);
   if(!token) return;
   githubToken=token;
@@ -1853,8 +1861,7 @@ function setupGistSync(){
 function clearGistConfig(){
   if(!confirm('确定清除 GitHub Token 配置吗？')) return;
   githubToken='';syncGistId=null;
-  localStorage.removeItem('nutrition_github_token');
-  localStorage.removeItem('nutrition_gist_id');
+  try{localStorage.removeItem('nutrition_github_token');localStorage.removeItem('nutrition_gist_id');}catch(e){}
   updateSyncPanelUI();
 }
 
@@ -1880,12 +1887,26 @@ async function syncToCloud(){
         const content=existing.files?.[GIST_FILENAME]?.content;
         if(content){
           const cloud=JSON.parse(content);
-          const merged={...(cloud.records||{}),...payload.records};
-          Object.keys(cloud.records||{}).forEach(d=>{if(!merged[d])merged[d]=cloud.records[d];});
-          payload.records=merged;
-          const all=[...(cloud.customFoods||[]),...payload.customFoods];
-          const seen=new Set();
-          payload.customFoods=all.filter(f=>{if(seen.has(f.id))return false;seen.add(f.id);return true;});
+          // Deep merge records: cloud base + payload new items
+          const mergedRecords=JSON.parse(JSON.stringify(cloud.records||{}));
+          Object.keys(payload.records||{}).forEach(date=>{
+            if(!mergedRecords[date])mergedRecords[date]={breakfast:[],lunch:[],dinner:[],snack:[]};
+            ['breakfast','lunch','dinner','snack'].forEach(mt=>{
+              const pItems=payload.records[date][mt]||[];
+              const cItems=mergedRecords[date][mt]||[];
+              const cIds=new Set(cItems.map(i=>i.id));
+              pItems.forEach(item=>{if(!cIds.has(item.id))cItems.push(item);});
+              mergedRecords[date][mt]=cItems;
+            });
+          });
+          payload.records=mergedRecords;
+          // Merge customFoods: unique by ID (payload wins on conflict)
+          if(cloud.customFoods){
+            const foodMap=new Map();
+            cloud.customFoods.forEach(f=>foodMap.set(f.id,f));
+            (payload.customFoods||[]).forEach(f=>foodMap.set(f.id,f));
+            payload.customFoods=[...foodMap.values()];
+          }
         }
       }catch(e){}
     }
@@ -1946,6 +1967,27 @@ async function syncFromCloud(){
 try{
   if(githubToken&&!githubToken.includes('YOUR_TOKEN')) updateSyncPanelUI();
 }catch(e){}
+
+// ===== OFFLINE STATUS INDICATOR =====
+(function(){
+  const indicator = document.createElement("div");
+  indicator.id = "offlineIndicator";
+  indicator.style.cssText = "position:fixed;top:0;left:0;right:0;z-index:9999;background:#e53935;color:#fff;text-align:center;padding:4px 10px;font-size:13px;font-weight:600;display:none;transform:translateY(0);transition:transform .3s";
+  indicator.textContent = "🌐 当前离线 · 部分功能不可用";
+  document.body.prepend(indicator);
+  function updateOnlineStatus(){
+    const el = document.getElementById("offlineIndicator");
+    if(!el) return;
+    if(!navigator.onLine){
+      el.style.display = "block";
+    } else {
+      el.style.display = "none";
+    }
+  }
+  window.addEventListener("online", updateOnlineStatus);
+  window.addEventListener("offline", updateOnlineStatus);
+  updateOnlineStatus();
+})();
 
 // ===== SERVICE WORKER REGISTRATION =====
 if('serviceWorker' in navigator){
