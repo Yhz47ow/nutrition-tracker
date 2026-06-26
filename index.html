@@ -114,7 +114,7 @@ a{color:var(--green);text-decoration:none}
 .summary-card.f-good .value{color:#FF9800}
 .summary-card.f-great .value{color:var(--green)}
 .summary-card .bar{
-  height:3px;border-radius:2px;margin-top:8px;background:#eee;
+  height:3px;border-radius:2px;margin-top:8px;background:var(--border);
   position:relative;overflow:hidden;
 }
 .summary-card .bar-fill{height:100%;border-radius:2px;transition:width .5s}
@@ -251,7 +251,7 @@ a{color:var(--green);text-decoration:none}
   background:var(--card);cursor:pointer;font-size:13px;font-weight:500;
   transition:all .2s;text-align:center;
 }
-.meal-selector button.active{border-color:var(--green);background:#e8f5e9;color:var(--green-dark)}
+.meal-selector button.active{background:var(--green);color:#fff;border-color:var(--green);background:#e8f5e9;color:var(--green-dark)}
 .meal-selector button .ms-icon{display:block;font-size:16px;margin-bottom:2px}
 
 /* ===== FOOD LIBRARY SCREEN ===== */
@@ -349,169 +349,195 @@ a{color:var(--green);text-decoration:none}
   display:inline-block;font-size:11px;padding:1px 7px;border-radius:6px;
   background:#f5f5f5;color:var(--text2);
 }
-.tag-green{background:#e8f5e9;color:var(--green-dark)}
-.tag-blue{background:#e3f2fd;color:#1565C0}
-.tag-orange{background:#fff3e0;color:#E65100}
+.tag-green{background:var(--tag-bg);color:var(--green-dark)}
+.tag-blue{background:var(--tag-bg);color:#1565C0}
+.tag-orange{background:var(--tag-bg);color:#E65100}
 
 /* ===== RESPONSIVE ===== */
 @media(min-width:480px){
   body{max-width:480px;margin:0 auto;border-left:1px solid var(--border);border-right:1px solid var(--border);min-height:100vh}
 }
 
-[data-theme="dark"]{
-  --bg:#111;--card:#1c1c1c;--text:#e0e0e0;--text2:#7e7e8a;
-  --border:#2a2a2e;--shadow:0 1px 8px rgba(0,0,0,.5);
-  --green:#66BB6A;--green-dark:#43A047;--green-light:#81C784;
-  --orange:#FFA726;--blue:#42A5F5;
-  --c-color:#66BB6A;--p-color:#42A5F5;--f-color:#FFA726;
-}
-[data-theme="dark"] body{background:#0d0d0d}
-[data-theme="dark"] .app-header{background:linear-gradient(135deg,#1b5e20,#0d3b0f);box-shadow:0 2px 16px rgba(0,0,0,.5)}
-[data-theme="dark"] .app-header h1{color:#fff}
-[data-theme="dark"] .tab-bar{background:#18181b;border-top:1px solid #27272a}
-[data-theme="dark"] .summary-card{background:var(--card);border:1px solid #252528}
-[data-theme="dark"] .summary-card .bar{background:#2e2e33}
-[data-theme="dark"] .food-item{background:var(--card);border:1px solid #252528}
-[data-theme="dark"] .food-item .food-macros span{background:#252528;color:#a0a0b0}
-[data-theme="dark"] .food-item .food-del{color:#555}
-[data-theme="dark"] .food-item .food-del:active{color:#ef5350}
-[data-theme="dark"] .meal-section{border:none}
-[data-theme="dark"] .meal-add-btn{background:#1c1c1c;border-color:#333;color:#66BB6A}
-[data-theme="dark"] .meal-add-btn:active{background:#1b3a1c}
-[data-theme="dark"] .meal-copy-btn:hover{background:#252528}
-[data-theme="dark"] .macro-ring-wrap{background:var(--card);border:1px solid #252528}
-[data-theme="dark"] .date-nav button{background:var(--card);border-color:var(--border);color:var(--text)}
-[data-theme="dark"] .date-nav button:active{background:#252528}
-[data-theme="dark"] .date-nav .date-label{color:var(--text)}
-[data-theme="dark"] .remain-item{background:#16161a}
-[data-theme="dark"] .remain-item.r-ok{background:#0d2a0d;color:#81C784}
-[data-theme="dark"] .remain-item.r-warn{background:#2a1d00;color:#FFB74D}
-[data-theme="dark"] .remain-item.r-over{background:#2a0d0d;color:#EF9A9A}
-[data-theme="dark"] .search-box input{background:#1c1c1c;color:#e0e0e0;border-color:#333}
-[data-theme="dark"] .search-box input:focus{border-color:#66BB6A}
-[data-theme="dark"] .search-tabs{border-color:#333}
-[data-theme="dark"] .search-tabs button{background:#1c1c1c;color:#7e7e8a}
-[data-theme="dark"] .search-tabs button.active{background:#1b5e20;color:#fff}
-[data-theme="dark"] .food-list-item{background:var(--card);border:1px solid #252528}
-[data-theme="dark"] .food-list-item:active{background:#1e1e22}
-[data-theme="dark"] .food-list-item .fli-macros span{background:#252528;color:#a0a0b0}
-[data-theme="dark"] .food-list-item .fli-cal{color:#a0a0b0}
-[data-theme="dark"] .lib-tabs{border-color:#333}
-[data-theme="dark"] .lib-tabs button{background:#1c1c1c;color:#7e7e8a}
-[data-theme="dark"] .lib-tabs button.active{background:#1b5e20;color:#fff}
-[data-theme="dark"] .history-day{background:var(--card);border:1px solid #252528}
-[data-theme="dark"] .history-day .hd-macros span{background:#252528;color:#a0a0b0}
-[data-theme="dark"] .rec-item{background:var(--card);border:1px solid #252528}
-[data-theme="dark"] .rec-item:active{background:#1e1e22}
-[data-theme="dark"] .rec-item .rec-macros span{background:#252528;color:#a0a0b0}
-[data-theme="dark"] .modal-overlay{background:rgba(0,0,0,.65)}
-[data-theme="dark"] .modal-sheet{background:#1c1c1c;border-top:1px solid #333}
-[data-theme="dark"] .modal-handle{background:#444}
-[data-theme="dark"] input, [data-theme="dark"] select, [data-theme="dark"] textarea{background:#242424;color:#e0e0e0;border-color:#333}
-[data-theme="dark"] input:focus, [data-theme="dark"] select:focus, [data-theme="dark"] textarea:focus{border-color:#66BB6A}
-[data-theme="dark"] .gram-control input{background:transparent!important;color:#e0e0e0}
-[data-theme="dark"] .meal-selector button{background:#242424;color:#7e7e8a;border-color:#333}
-[data-theme="dark"] .meal-selector button.active{background:#1b5e20;color:#fff;border-color:#2e7d32}
-[data-theme="dark"] .gram-presets button{background:#242424;color:#a0a0b0;border-color:#333}
-[data-theme="dark"] .gram-presets button:active{background:#333}
-[data-theme="dark"] .btn-primary{background:#43A047;box-shadow:0 2px 8px rgba(67,160,71,.3)}
-[data-theme="dark"] .btn-primary:active{background:#378f3b}
-[data-theme="dark"] .btn-secondary{background:#242424;border-color:#333;color:#a0a0b0}
-[data-theme="dark"] .btn-secondary:active{background:#333}
-[data-theme="dark"] .calc-helper{background:#16161a;border-color:#2a2a2e}
-[data-theme="dark"] #cfCalcResult{background:#1c1c1c;border-color:#333;color:#e0e0e0}
-[data-theme="dark"] .tag-orange{background:#2a1d00;color:#FFB74D}
-[data-theme="dark"] .tag-green{background:#0d1f0d;color:#81C784}
-[data-theme="dark"] .tag-blue{background:#0d1f3d;color:#64B5F6}
-[data-theme="dark"] .tag-purple{background:#1a0d2a;color:#CE93D8}
-[data-theme="dark"] .macro-legend-item .gram, [data-theme="dark"] .macro-legend-item .pct, [data-theme="dark"] .macro-legend-item .val{color:#a0a0b0}
-[data-theme="dark"] svg circle[fill="none"][stroke="#eee"]{stroke:#2a2a2e}
-[data-theme="dark"] .lib-empty, [data-theme="dark"] .rec-empty, [data-theme="dark"] .search-status{color:#7e7e8a}
-[data-theme="dark"] #offlineIndicator{background:#b71c1c}
-[data-theme="dark"] ::-webkit-scrollbar-thumb{background:#3a3a3e}
-[data-theme="dark"] ::-webkit-scrollbar-track{background:#0d0d0d}
-[data-theme="dark"] .food-name-display{color:var(--text)}
-[data-theme="dark"] .macro-preview{color:var(--text2)}
-[data-theme="dark"] #giMacroResult{color:var(--text2)}
-[data-theme="dark"] .form-row .form-group label, [data-theme="dark"] .form-group label{color:var(--text2)}
-[data-theme="dark"] #syncLoggedOut, [data-theme="dark"] .sync-status-text{color:var(--text2)}
-[data-theme="dark"] .hd-header .hd-date, [data-theme="dark"] .hd-header .hd-total{color:var(--text)}
-[data-theme="dark"] .hd-meals{color:var(--text2)}
-[data-theme="dark"] #appToast{background:#333;color:#fff}
-[data-theme="dark"] p{color:var(--text2)}
-
 /* ===== WARM / EYE-CARE THEME ===== */
-[data-theme="warm"]{
-  --bg:#f4ecd8;--card:#faf6ed;--text:#4a3728;--text2:#8c7a6b;
-  --border:#ddd2be;--shadow:0 1px 8px rgba(139,119,101,.15);
-  --green:#5b8c4e;--green-dark:#4a7340;--green-light:#7aa86c;
-  --orange:#cd853f;--blue:#4a7d9e;
-  --c-color:#5b8c4e;--p-color:#4a7d9e;--f-color:#cd853f;
+/* ============================================================
+   THEME SYSTEM: light (default) · dark · warm
+   Single source of truth for all color tokens
+   ============================================================ */
+
+/* Light theme (default, no attribute needed) */
+:root{
+  /* Surfaces */
+  --bg:#f5f7fa;--card:#fff;--input-bg:#fff;
+  --elevated:#fff;
+  /* Text */
+  --text:#1a1a2e;--text2:#666680;
+  /* Borders & Shadows */
+  --border:#e8ecf1;--shadow:0 2px 12px rgba(0,0,0,.08);
+  /* Accent */
+  --green:#4CAF50;--green-dark:#388E3C;--green-light:#81C784;
+  --orange:#FF9800;--blue:#2196F3;--pink:#E91E63;--purple:#9C27B0;
+  /* Ring chart */
+  --c-color:#4CAF50;--p-color:#2196F3;--f-color:#FF9800;
+  /* Tags */
+  --tag-bg:#f5f5f5;--tag-text:#666;
+  /* Misc */
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+  --safe-top:env(safe-area-inset-top,0px);
+  --radius:16px;
 }
-[data-theme="warm"] body{background:#efe8d5}
-[data-theme="warm"] .app-header{background:linear-gradient(135deg,#4a7340,#3a5c30);box-shadow:0 2px 12px rgba(74,115,64,.25)}
-[data-theme="warm"] .tab-bar{background:#f2ead4;border-top:1px solid #e0d5c0}
-[data-theme="warm"] .summary-card{background:var(--card);border:1px solid #e5dbc8}
-[data-theme="warm"] .summary-card .bar{background:#e0d5c0}
-[data-theme="warm"] .food-item{background:var(--card);border:1px solid #e5dbc8}
-[data-theme="warm"] .food-item .food-macros span{background:#f0e8d5;color:#6b5d4f}
-[data-theme="warm"] .food-item .food-del{color:#baa892}
-[data-theme="warm"] .food-item .food-del:active{color:#c0392b}
-[data-theme="warm"] .meal-add-btn{background:#faf6ed;border-color:#ddd2be;color:#5b8c4e}
-[data-theme="warm"] .meal-add-btn:active{background:#e8f0dc}
-[data-theme="warm"] .meal-copy-btn:hover{background:#f0e8d5}
-[data-theme="warm"] .macro-ring-wrap{background:var(--card);border:1px solid #e5dbc8}
-[data-theme="warm"] .date-nav button{background:var(--card);border-color:var(--border);color:var(--text)}
-[data-theme="warm"] .date-nav button:active{background:#f0e8d5}
-[data-theme="warm"] .remain-item{background:#f4eddc}
-[data-theme="warm"] .remain-item.r-ok{background:#e8f0dc;color:#4a7340}
-[data-theme="warm"] .remain-item.r-warn{background:#faf0db;color:#b8860b}
-[data-theme="warm"] .remain-item.r-over{background:#fae8e4;color:#c0392b}
-[data-theme="warm"] .search-box input{background:#faf6ed;color:#4a3728;border-color:#ddd2be}
-[data-theme="warm"] .search-box input:focus{border-color:#5b8c4e}
-[data-theme="warm"] .search-tabs{border-color:#ddd2be}
-[data-theme="warm"] .search-tabs button{background:#faf6ed;color:#8c7a6b}
-[data-theme="warm"] .search-tabs button.active{background:#5b8c4e;color:#fff}
-[data-theme="warm"] .food-list-item{background:var(--card);border:1px solid #e5dbc8}
-[data-theme="warm"] .food-list-item:active{background:#f0e8d5}
-[data-theme="warm"] .food-list-item .fli-macros span{background:#f0e8d5;color:#6b5d4f}
-[data-theme="warm"] .food-list-item .fli-cal{color:#8c7a6b}
-[data-theme="warm"] .lib-tabs{border-color:#ddd2be}
-[data-theme="warm"] .lib-tabs button{background:#faf6ed;color:#8c7a6b}
-[data-theme="warm"] .lib-tabs button.active{background:#5b8c4e;color:#fff}
-[data-theme="warm"] .history-day{background:var(--card);border:1px solid #e5dbc8}
-[data-theme="warm"] .history-day .hd-macros span{background:#f0e8d5;color:#6b5d4f}
-[data-theme="warm"] .rec-item{background:var(--card);border:1px solid #e5dbc8}
-[data-theme="warm"] .rec-item:active{background:#f0e8d5}
-[data-theme="warm"] .rec-item .rec-macros span{background:#f0e8d5;color:#6b5d4f}
-[data-theme="warm"] .modal-overlay{background:rgba(60,45,25,.4)}
-[data-theme="warm"] .modal-sheet{background:#faf6ed;border-top:1px solid #e0d5c0}
-[data-theme="warm"] .modal-handle{background:#d5c8b0}
-[data-theme="warm"] input, [data-theme="warm"] select, [data-theme="warm"] textarea{background:#fdf8ee;color:#4a3728;border-color:#ddd2be}
-[data-theme="warm"] .gram-control input{background:transparent!important;color:#4a3728}
-[data-theme="warm"] .meal-selector button{background:#fdf8ee;color:#8c7a6b;border-color:#ddd2be}
-[data-theme="warm"] .meal-selector button.active{background:#5b8c4e;color:#fff;border-color:#4a7340}
-[data-theme="warm"] .gram-presets button{background:#fdf8ee;color:#8c7a6b;border-color:#ddd2be}
-[data-theme="warm"] .gram-presets button:active{background:#f0e8d5}
-[data-theme="warm"] .btn-primary{background:#5b8c4e;box-shadow:0 2px 8px rgba(91,140,78,.3)}
-[data-theme="warm"] .btn-secondary{background:#fdf8ee;border-color:#ddd2be;color:#8c7a6b}
-[data-theme="warm"] .btn-secondary:active{background:#f0e8d5}
-[data-theme="warm"] .tag-orange{background:#faf0db;color:#b8860b}
-[data-theme="warm"] .tag-green{background:#e8f0dc;color:#5b8c4e}
-[data-theme="warm"] .tag-blue{background:#e4f0f6;color:#4a7d9e}
-[data-theme="warm"] .macro-legend-item .gram, [data-theme="warm"] .macro-legend-item .pct, [data-theme="warm"] .macro-legend-item .val{color:#8c7a6b}
-[data-theme="warm"] svg circle[fill="none"][stroke="#eee"]{stroke:#e0d5c0}
-[data-theme="warm"] .lib-empty, [data-theme="warm"] .rec-empty, [data-theme="warm"] .search-status{color:#8c7a6b}
-[data-theme="warm"] #offlineIndicator{background:#c0392b}
-[data-theme="warm"] ::-webkit-scrollbar-thumb{background:#ddd2be}
-[data-theme="warm"] ::-webkit-scrollbar-track{background:#efe8d5}
-[data-theme="warm"] #giPhotoPreview{background:#f0e8d5;border-color:#e0d5c0}
-[data-theme="warm"] #appToast{background:#4a3728;color:#faf6ed}
-[data-theme="warm"] p{color:var(--text2)}
-[data-theme="warm"] .search-status{color:#8c7a6b}
-[data-theme="warm"] .calc-helper{background:#f4eddc;border-color:#ddd2be}
-[data-theme="warm"] #cfCalcResult{background:#fdf8ee;border-color:#ddd2be;color:#4a3728}
-[data-theme="warm"] a{color:#5b8c4e}
+
+/* Dark theme — inspired by Linear / Notion */
+[data-theme="dark"]{
+  --bg:#0f1117;--card:#1a1d23;--input-bg:#16181d;
+  --elevated:#22252d;
+  --text:#e3e3e8;--text2:#8b8d98;
+  --border:#23252b;--shadow:0 1px 3px rgba(0,0,0,.5);
+  --green:#4ade80;--green-dark:#22c55e;--green-light:#86efac;
+  --orange:#fb923c;--blue:#60a5fa;--pink:#f472b6;--purple:#c084fc;
+  --c-color:#4ade80;--p-color:#60a5fa;--f-color:#fb923c;
+  --tag-bg:#1e293b;--tag-text:#94a3b8;
+}
+
+/* Warm eye-care theme — inspired by WeChat Reading / Kindle */
+[data-theme="warm"]{
+  --bg:#f5ecd7;--card:#fbf6eb;--input-bg:#fefaf1;
+  --elevated:#fffdf5;
+  --text:#3e3232;--text2:#8b7d6b;
+  --border:#e5d9bc;--shadow:0 1px 6px rgba(139,119,101,.12);
+  --green:#5e8b4a;--green-dark:#4a7340;--green-light:#7aa86c;
+  --orange:#c88a3e;--blue:#5a8daf;--pink:#c46a8a;--purple:#8e6aaa;
+  --c-color:#5e8b4a;--p-color:#5a8daf;--f-color:#c88a3e;
+  --tag-bg:#f0e8d0;--tag-text:#6b5d4f;
+}
+
+/* ===== THEME-AWARE OVERRIDES ===== */
+
+/* Body */
+body{background:var(--bg)}
+
+/* Header */
+.app-header{
+  background:linear-gradient(135deg,var(--green),var(--green-dark));
+  box-shadow:0 2px 12px rgba(0,0,0,.15);
+  color:#fff;
+}
+
+/* Inputs */
+input,select,textarea{
+  background:var(--input-bg);color:var(--text);border-color:var(--border);
+}
+input:focus,select:focus,textarea:focus{border-color:var(--green)}
+
+/* Modal */
+.modal-sheet{background:var(--elevated)}
+[data-theme] .modal-overlay{background:rgba(0,0,0,.65)}
+
+/* Tags */
+.tag-green{background:var(--tag-bg);color:var(--green)}
+.tag-blue{background:var(--tag-bg);color:var(--blue)}
+.tag-orange{background:var(--tag-bg);color:var(--orange)}
+.tag-purple{background:var(--tag-bg);color:var(--purple)}
+
+/* Food tags in food-item */
+.food-item .food-macros span,.food-list-item .fli-macros span,
+.history-day .hd-macros span,.rec-item .rec-macros span{
+  background:var(--tag-bg);color:var(--tag-text);
+}
+
+/* Buttons */
+.btn-primary{background:var(--green);color:#fff}
+.btn-primary:active{background:var(--green-dark)}
+.btn-secondary{background:var(--input-bg);border-color:var(--border);color:var(--text2)}
+.btn-secondary:active{filter:brightness(.95)}
+
+/* Tabs */
+.search-tabs,.lib-tabs{border-color:var(--border)}
+.search-tabs button,.lib-tabs button{background:var(--card);color:var(--text2)}
+.search-tabs button.active,.lib-tabs button.active{background:var(--green);color:#fff}
+
+/* Cards */
+.summary-card,.food-item,.food-list-item,.history-day,.rec-item{
+  background:var(--card);box-shadow:var(--shadow);
+}
+.summary-card .bar{background:var(--border)}
+
+/* Remain items */
+.remain-item{background:var(--tag-bg)}
+.remain-item.r-ok{background:rgba(76,175,80,.12);color:var(--green)}
+.remain-item.r-warn{background:rgba(255,152,0,.12);color:var(--orange)}
+.remain-item.r-over{background:rgba(233,30,99,.1);color:var(--pink)}
+
+/* Meals */
+.meal-add-btn{background:var(--card);border-color:var(--border);color:var(--green)}
+.meal-add-btn:active{filter:brightness(.95)}
+.meal-copy-btn{color:var(--text2)}
+.meal-copy-btn:hover{background:var(--tag-bg)}
+
+/* Date nav */
+.date-nav button{background:var(--card);border-color:var(--border);color:var(--text)}
+.date-nav button:active{background:var(--tag-bg)}
+.date-nav .date-label{color:var(--text)}
+
+/* Search box */
+.search-box input{background:var(--input-bg);color:var(--text);border-color:var(--border)}
+.search-box input:focus{border-color:var(--green)}
+
+/* History */
+.history-day{border-color:var(--border)}
+
+/* Library */
+.lib-empty{color:var(--text2)}
+
+/* Food item delete */
+.food-item .food-del{color:#aaa}
+.food-item .food-del:active{color:#f44336}
+
+/* Tab bar */
+.tab-bar{background:var(--card);box-shadow:0 -2px 16px rgba(0,0,0,.1)}
+
+/* Scrollbar */
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* Links */
+a{color:var(--green)}
+
+/* Macro ring background circle */
+.macro-ring svg circle[fill="none"]{stroke:var(--border)}
+
+/* Toast */
+#appToast{background:var(--text);color:var(--bg)}
+
+/* Meal selector */
+.meal-selector button{background:var(--input-bg);color:var(--text2);border-color:var(--border)}
+.meal-selector button.active{background:var(--green);color:#fff;background:var(--green);color:#fff;border-color:var(--green-dark)}
+
+/* Gram presets */
+.gram-presets button{background:var(--input-bg);color:var(--text2);border-color:var(--border);border-radius:12px;padding:6px 12px;border:1px solid var(--border);cursor:pointer;font-size:13px}
+.gram-presets button:active{filter:brightness(.9)}
+
+/* Other */
+.calc-helper{background:var(--tag-bg);border-color:var(--border)}
+#cfCalcResult{background:var(--input-bg);border-color:var(--border);color:var(--text)}
+.rec-item:active,.food-list-item:active{filter:brightness(.95)}
+#searchOnlineTip,.search-status{color:var(--text2)}
+.macro-legend-item .gram,.macro-legend-item .pct,.macro-legend-item .val{color:var(--text2)}
+p,.hd-meals{color:var(--text2)}
+.hd-header .hd-date,.hd-header .hd-total{color:var(--text)}
+#offlineIndicator{background:#e53935;color:#fff}
+#giPhotoPreview{background:var(--tag-bg);border-color:var(--border)}
+.form-group label,.form-row .form-group label{color:var(--text2)}
+.food-name-display{color:var(--text)}
+.macro-preview,#giMacroResult{color:var(--text2)}
+
+/* Theme toggle button */
+.theme-toggle-btn{
+  background:rgba(255,255,255,.2);border:none;color:#fff;
+  padding:4px 12px;border-radius:20px;display:flex;
+  align-items:center;gap:4px;cursor:pointer;
+  font-size:13px;transition:background .2s;
+}
+.theme-toggle-btn:active{background:rgba(255,255,255,.35)}
+
 </style>
 </head>
 <body>
@@ -524,7 +550,7 @@ a{color:var(--green);text-decoration:none}
     <button class="header-btn" onclick="openModal('customFoodModal')" title="自定义食物">➕</button>
     <button class="header-btn" onclick="setupGistSync()" title="云同步">☁️</button>
     <button class="header-btn" onclick="openModal('settingsModal')" title="目标设置">⚙️</button>
-    <button class="header-btn" onclick="toggleDarkMode()" id="darkModeBtn" title="切换主题：亮色 · 暗色 · 护眼">🌞</button>
+    <button class="theme-toggle-btn" onclick="toggleDarkMode()" id="darkModeBtn" title="切换主题 · 当前：亮色">🌞 <span style="font-weight:400">主题</span></button>
   </div>
 </header>
 
@@ -559,7 +585,7 @@ a{color:var(--green);text-decoration:none}
   <div class="macro-ring-wrap">
     <div class="macro-ring" id="macroRing">
       <svg viewBox="0 0 120 120">
-        <circle cx="60" cy="60" r="50" fill="none" stroke="#eee" stroke-width="14"/>
+        <circle cx="60" cy="60" r="50" fill="none" stroke="var(--border)" stroke-width="14"/>
         <g transform="rotate(-90 60 60)">
           <circle cx="60" cy="60" r="50" fill="none" stroke="var(--c-color)" stroke-width="14" stroke-dasharray="0 314" id="arcCarbs"/>
           <circle cx="60" cy="60" r="50" fill="none" stroke="var(--p-color)" stroke-width="14" stroke-dasharray="0 314" id="arcProtein"/>
@@ -2390,7 +2416,8 @@ if('serviceWorker' in navigator){
 
 // ===== THEME TOGGLE: light -> dark -> warm -> light =====
 var THEME_CYCLE = ["light", "dark", "warm"];
-var THEME_ICONS = {light: "🌞", dark: "🌙", warm: "📖"};
+var THEME_ICONS = {light: "🌞 主题", dark: "🌙 主题", warm: "📖 主题"};
+var THEME_NAMES = {light: "亮色", dark: "暗色", warm: "护眼"};
 
 function toggleDarkMode(){
   var html = document.documentElement;
@@ -2404,7 +2431,7 @@ function toggleDarkMode(){
   } else {
     html.setAttribute("data-theme", next);
   }
-  if(btn) btn.textContent = THEME_ICONS[next];
+  if(btn){ btn.innerHTML = THEME_ICONS[next]; btn.title = "切换主题 · 当前：" + THEME_NAMES[next]; }
   try{localStorage.setItem("nutrition_theme", next);}catch(e){}
 }
 
@@ -2422,7 +2449,7 @@ function toggleDarkMode(){
     if(saved && saved !== "light"){
       document.documentElement.setAttribute("data-theme", saved);
       var btn = document.getElementById("darkModeBtn");
-      if(btn) btn.textContent = THEME_ICONS[saved] || "🌙";
+      if(btn){ btn.innerHTML = THEME_ICONS[saved] || "🌙 主题"; btn.title = "切换主题 · 当前：" + (THEME_NAMES[saved] || "暗色"); }
     }
   }catch(e){}
 })();
