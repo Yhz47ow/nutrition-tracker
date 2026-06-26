@@ -305,7 +305,7 @@ a{color:var(--green);text-decoration:none}
   background:var(--card);border-radius:10px;padding:8px 12px;margin-bottom:4px;
   display:flex;align-items:center;gap:8px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.06);
 }
-.rec-item:active{background:#f0f8f0}
+.rec-item:active{background:var(--tag-bg)}
 .rec-item .rec-name{flex:1;font-weight:500;font-size:13px}
 .rec-item .rec-gram{font-size:11px;color:var(--text2)}
 .rec-item .rec-macros{font-size:10px;color:var(--text2);display:flex;gap:3px}
@@ -397,6 +397,12 @@ a{color:var(--green);text-decoration:none}
   --c-color:#4ade80;--p-color:#60a5fa;--f-color:#fb923c;
   --tag-bg:#1e293b;--tag-text:#94a3b8;
 }
+[data-theme="dark"] .rec-item{box-shadow:none}
+[data-theme="dark"] .rec-item:active{filter:brightness(1.2)}
+[data-theme="dark"] input:-webkit-autofill{box-shadow:0 0 0 1000px var(--input-bg) inset!important;-webkit-text-fill-color:var(--text)!important}
+[data-theme="dark"] .hd-header .hd-date,.hd-header .hd-total{color:var(--text)}
+[data-theme="dark"] .hd-meals{color:var(--text2)}
+
 
 /* Warm eye-care theme — inspired by WeChat Reading / Kindle */
 [data-theme="warm"]{
@@ -409,6 +415,12 @@ a{color:var(--green);text-decoration:none}
   --c-color:#5e8b4a;--p-color:#5a8daf;--f-color:#c88a3e;
   --tag-bg:#f0e8d0;--tag-text:#6b5d4f;
 }
+[data-theme="warm"] .rec-item{box-shadow:0 1px 3px rgba(139,119,101,.08)}
+[data-theme="warm"] .rec-item:active{filter:brightness(.98)}
+[data-theme="warm"] input:-webkit-autofill{box-shadow:0 0 0 1000px var(--input-bg) inset!important;-webkit-text-fill-color:var(--text)!important}
+[data-theme="warm"] .hd-header .hd-date,.hd-header .hd-total{color:var(--text)}
+[data-theme="warm"] .hd-meals{color:var(--text2)}
+
 
 /* ===== THEME-AWARE OVERRIDES ===== */
 
@@ -622,10 +634,10 @@ p,.hd-meals{color:var(--text2)}
     <div id="recList" class="rec-list"></div>
     
     <!-- 自定义推荐计算器 -->
-    <div style="margin-top:10px;padding-top:10px;border-top:1px dashed rgba(0,0,0,.1)">
+    <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)">
       <div style="font-size:13px;font-weight:600;margin-bottom:6px">🔢 指定食物计算</div>
       <div style="display:flex;gap:6px">
-        <input type="text" id="calcFoodInput" placeholder="输入食物名称搜索…" style="flex:1;border:1px solid #ddd;border-radius:8px;padding:8px 10px;font-size:14px;outline:none" onkeydown="if(event.key==='Enter') calcFoodRecommend()">
+        <input type="text" id="calcFoodInput" placeholder="输入食物名称搜索…" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px;outline:none;background:var(--input-bg);color:var(--text)" onkeydown="if(event.key==='Enter') calcFoodRecommend()">
         <button onclick="calcFoodRecommend()" style="background:var(--green);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;white-space:nowrap">计算</button>
       </div>
       <div id="calcFoodResult" style="margin-top:6px;font-size:13px;color:var(--text2);min-height:20px"></div>
