@@ -387,33 +387,7 @@ a{color:var(--green);text-decoration:none}
 }
 
 /* Dark theme — inspired by Linear / Notion */
-[data-theme="dark"]{
-  --bg:#0f1117;--card:#1a1d23;--input-bg:#16181d;
-  --elevated:#22252d;
-  --text:#e3e3e8;--text2:#8b8d98;
-  --border:#23252b;--shadow:0 1px 3px rgba(0,0,0,.5);
-  --green:#4ade80;--green-dark:#22c55e;--green-light:#86efac;
-  --orange:#fb923c;--blue:#60a5fa;--pink:#f472b6;--purple:#c084fc;
-  --c-color:#4ade80;--p-color:#60a5fa;--f-color:#fb923c;
-  --tag-bg:#1e293b;--tag-text:#94a3b8;
-}
-[data-theme="dark"] .rec-item{background:#252530;box-shadow:none}
-[data-theme="dark"] .rec-item .rec-name{color:#eee}
-[data-theme="dark"] .rec-item .rec-gram{color:#bbb}
-[data-theme="dark"] .rec-item .rec-macros{color:#bbb}
-[data-theme="dark"] .rec-item .rec-add{background:#3a3a4a;color:#fff}
-[data-theme="dark"] .rec-item:active{background:#303040}
-[data-theme="dark"] .search-tabs{background:#111;border-color:#333;border-radius:10px}
-[data-theme="dark"] .search-tabs button{background:transparent;color:#888}
-[data-theme="dark"] .search-tabs button.active{background:#4ade80;color:#111;font-weight:700}
-[data-theme="dark"] .search-box input{background:#1a1a20;color:#e0e0e0;border-color:#333}
-[data-theme="dark"] input:-webkit-autofill{box-shadow:0 0 0 1000px #1a1a20 inset!important;-webkit-text-fill-color:#e0e0e0!important}
-[data-theme="dark"] .hd-header .hd-date,.hd-header .hd-total{color:var(--text)}
-[data-theme="dark"] .hd-meals{color:var(--text2)}
-[data-theme="dark"] .rec-item:active{filter:brightness(1.2)}
-[data-theme="dark"] input:-webkit-autofill{box-shadow:0 0 0 1000px var(--input-bg) inset!important;-webkit-text-fill-color:var(--text)!important}
-[data-theme="dark"] .hd-header .hd-date,.hd-header .hd-total{color:var(--text)}
-[data-theme="dark"] .hd-meals{color:var(--text2)}
+
 
 
 /* Warm eye-care theme — inspired by WeChat Reading / Kindle */
@@ -2439,9 +2413,9 @@ if('serviceWorker' in navigator){
 }
 
 // ===== THEME TOGGLE: light -> dark -> warm -> light =====
-var THEME_CYCLE = ["light", "dark", "warm"];
-var THEME_ICONS = {light: "🌞 主题", dark: "🌙 主题", warm: "📖 主题"};
-var THEME_NAMES = {light: "亮色", dark: "暗色", warm: "护眼"};
+var THEME_CYCLE = ["light", "warm"];
+var THEME_ICONS = {light: "🌞 主题", warm: "📖 主题"};
+var THEME_NAMES = {light: "亮色", warm: "护眼"};
 
 function toggleDarkMode(){
   var html = document.documentElement;
