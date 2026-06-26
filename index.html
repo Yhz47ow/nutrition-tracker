@@ -35,7 +35,49 @@
 [data-theme="dark"] .tag-orange{background:#3e2a00;color:#FFB74D}
 [data-theme="dark"] .tag-green{background:#1a3a1a;color:#81C784}
 [data-theme="dark"] .tag-blue{background:#0a2a4a;color:#64B5F6}
+
 [data-theme="dark"] ::-webkit-scrollbar-thumb{background:#555}
+[data-theme="dark"] .meal-add-btn:active{background:#2a3a2a}
+[data-theme="dark"] #giPhotoPreview{background:#333;border-color:#555}
+[data-theme="dark"] .date-nav button:active{background:#333}
+[data-theme="dark"] .summary-card .bar{background:#333}
+[data-theme="dark"] .tag-orange{background:#3e2a00;color:#FFB74D}
+[data-theme="dark"] .tag-green{background:#1a3a1a;color:#81C784}
+[data-theme="dark"] .tag-blue{background:#0a2a4a;color:#64B5F6}
+[data-theme="dark"] .food-item .food-macros span{background:#333;color:#bbb}
+[data-theme="dark"] .food-list-item .fli-macros span{background:#333;color:#bbb}
+[data-theme="dark"] .history-day .hd-macros span{background:#333;color:#bbb}
+[data-theme="dark"] .rec-item .rec-macros span{background:#333;color:#bbb}
+[data-theme="dark"] .remain-item{background:#1a1a1a}
+[data-theme="dark"] .food-list-item:active{background:#1a3a1a}
+[data-theme="dark"] .rec-item:active{background:#1a3a1a}
+[data-theme="dark"] .meal-add-btn:active{background:#2a3a2a}
+[data-theme="dark"] .food-item .food-del{color:#666}
+[data-theme="dark"] .modal-overlay{background:rgba(0,0,0,.7)}
+[data-theme="dark"] .modal-sheet{background:#1e1e1e}
+[data-theme="dark"] input, [data-theme="dark"] select, [data-theme="dark"] textarea{background:#2a2a2a;color:#eee;border-color:#444}
+[data-theme="dark"] .search-box input{background:#2a2a2a;color:#eee;border-color:#444}
+[data-theme="dark"] .gram-control input{background:transparent;color:#eee}
+[data-theme="dark"] .meal-selector button{background:#2a2a2a;color:#999;border-color:#444}
+[data-theme="dark"] .meal-selector button.active{background:var(--green-dark);color:#fff}
+[data-theme="dark"] .gram-presets button{background:#2a2a2a;color:#ccc;border-color:#444}
+[data-theme="dark"] .gram-presets button:active{background:#444}
+[data-theme="dark"] .search-tabs button{background:#2a2a2a;color:#999}
+[data-theme="dark"] .search-tabs button.active{background:var(--green-dark);color:#fff}
+[data-theme="dark"] .lib-tabs button{background:#2a2a2a;color:#999}
+[data-theme="dark"] .lib-tabs button.active{background:var(--green-dark);color:#fff}
+[data-theme="dark"] .food-list-item{background:#1e1e1e}
+[data-theme="dark"] .food-list-item .fli-cal{color:#bbb}
+[data-theme="dark"] .calc-helper{background:#1a1a1a;border-color:#333}
+[data-theme="dark"] #cfCalcResult{background:#2a2a2a;border-color:#444;color:#eee}
+[data-theme="dark"] .tab-bar{background:#1a1a1a}
+[data-theme="dark"] .app-header{box-shadow:0 2px 12px rgba(0,0,0,.4)}
+[data-theme="dark"] .history-day{background:#1e1e1e}
+[data-theme="dark"] .lib-empty{color:#999}
+[data-theme="dark"] #searchOnlineTip{color:#999}
+[data-theme="dark"] .search-status{color:#999}
+[data-theme="dark"] .date-nav .date-label{color:#eee}
+
 [data-theme="dark"] .meal-add-btn:active{background:#2a3a2a}
 
 html{font-size:16px}
@@ -911,18 +953,19 @@ function copyToToday(fromDate, mealType){
       foodName: item.foodName, grams: item.grams,
       calories: item.calories, protein: item.protein,
       carbs: item.carbs, fat: item.fat, mealType: mealType,
+      time: new Date().toLocaleTimeString("zh-CN", {hour:"2-digit",minute:"2-digit"}),
       photo: null,
     });
   });
   saveData();
-  if(fromDate === getDateStr()){
+  if(fromDate !== getDateStr()){
+    state.currentDate = getDateStr();
     renderDashboard();
+    showToast('✅ 已复制 ' + items.length + ' 项到今日，已切换到今日视图');
   } else {
-    // Switch to today to show the result
-    currentDate = new Date();
     renderDashboard();
+    showToast('✅ 已复制 ' + items.length + ' 项');
   }
-  showToast('✅ 已复制 ' + items.length + ' 项到今日');
 }
 
 // ===== TOAST NOTIFICATION =====
