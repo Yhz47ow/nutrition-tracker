@@ -589,7 +589,9 @@ p,.hd-meals{color:var(--text2)}
           <circle cx="60" cy="60" r="50" fill="none" stroke="var(--p-color)" stroke-width="14" stroke-dasharray="0 314" id="arcProtein"/>
           <circle cx="60" cy="60" r="50" fill="none" stroke="var(--f-color)" stroke-width="14" stroke-dasharray="0 314" id="arcFat"/>
         </g>
-        <text x="60" y="72" text-anchor="middle" font-size="16" font-weight="700" fill="var(--text)"><tspan id="ringPctCarbs">0%</tspan></text>
+        <text x="60" y="72" text-anchor="middle" font-size="16" font-weight="700" fill="var(--text)"><tspan x="60" y="52" font-size="12" font-weight="700" fill="var(--c-color)" id="ringPctC">-</tspan>
+          <tspan x="60" y="66" font-size="12" font-weight="700" fill="var(--p-color)" id="ringPctP">-</tspan>
+          <tspan x="60" y="80" font-size="12" font-weight="700" fill="var(--f-color)" id="ringPctF">-</tspan></text>
       </svg>
     </div>
     <div class="macro-legend">
@@ -1259,9 +1261,9 @@ function renderDashboard(){
   arcFat.setAttribute('stroke-dasharray', `${arcF} ${circumference-arcF}`);
   arcFat.setAttribute('transform', `rotate(${fatDeg} 60 60)`);
 
-  document.getElementById('ringPctCarbs').textContent = pctC+'%';
-
-  document.getElementById('ringPctCarbs').textContent = pctC+'%';
+  document.getElementById('ringPctC').textContent = '🥖'+pctC+'%';
+  document.getElementById('ringPctP').textContent = '🥩'+pctP+'%';
+  document.getElementById('ringPctF').textContent = '🧈'+pctF+'%';
 
   // Legend
   document.getElementById('legendCarbsG').textContent = totalC+'g';
