@@ -23,6 +23,21 @@
   --safe-top:env(safe-area-inset-top,0px);
   --c-color:#4CAF50;--p-color:#2196F3;--f-color:#FF9800;
 }
+[data-theme="dark"]{
+  --bg:#121212;--card:#1e1e1e;--text:#eee;--text2:#999;
+  --border:#333;--shadow:0 2px 12px rgba(0,0,0,.4);
+}
+[data-theme="dark"] .date-nav button:active{background:#333}
+[data-theme="dark"] .summary-card.f-warn .value{color:var(--text)}
+.summary-card.f-good .value{color:#FF9800}
+.summary-card.f-great .value{color:var(--green)}
+.summary-card .bar{background:#333}
+[data-theme="dark"] .tag-orange{background:#3e2a00;color:#FFB74D}
+[data-theme="dark"] .tag-green{background:#1a3a1a;color:#81C784}
+[data-theme="dark"] .tag-blue{background:#0a2a4a;color:#64B5F6}
+[data-theme="dark"] ::-webkit-scrollbar-thumb{background:#555}
+[data-theme="dark"] .meal-add-btn:active{background:#2a3a2a}
+
 html{font-size:16px}
 body{
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
@@ -101,6 +116,9 @@ a{color:var(--green);text-decoration:none}
 .summary-card .value{font-size:22px;font-weight:700}
 .summary-card .unit{font-size:12px;color:var(--text2);font-weight:400;margin-left:2px}
 .summary-card .sub{font-size:11px;color:var(--text2);margin-top:2px}
+.summary-card.f-warn .value{color:var(--text)}
+.summary-card.f-good .value{color:#FF9800}
+.summary-card.f-great .value{color:var(--green)}
 .summary-card .bar{
   height:3px;border-radius:2px;margin-top:8px;background:#eee;
   position:relative;overflow:hidden;
@@ -136,6 +154,12 @@ a{color:var(--green);text-decoration:none}
   display:flex;align-items:center;justify-content:center;gap:4px;
 }
 .meal-add-btn:active{background:#f0f8f0}
+.meal-copy-btn{
+  background:none;border:none;cursor:pointer;font-size:16px;
+  padding:2px 6px;border-radius:8px;line-height:1;margin-left:2px;
+  opacity:.5;transition:all .2s;flex-shrink:0;
+}
+.meal-copy-btn:hover{opacity:1;background:rgba(255,255,255,.1)}
 .food-item{
   background:var(--card);border-radius:12px;padding:10px 12px;margin-bottom:4px;
   box-shadow:var(--shadow);display:flex;align-items:center;gap:10px;
@@ -351,6 +375,7 @@ a{color:var(--green);text-decoration:none}
     <button class="header-btn" onclick="openModal('customFoodModal')" title="自定义食物">➕</button>
     <button class="header-btn" onclick="setupGistSync()" title="云同步">☁️</button>
     <button class="header-btn" onclick="openModal('settingsModal')" title="目标设置">⚙️</button>
+    <button class="header-btn" onclick="toggleDarkMode()" id="darkModeBtn" title="切换夜间模式">🌙</button>
   </div>
 </header>
 
@@ -373,6 +398,11 @@ a{color:var(--green);text-decoration:none}
       <div class="label">⚡ 总重量</div>
       <div class="value"><span id="totalWeight">0</span><span class="unit">g</span></div>
       <div class="sub" id="mealCount">0 餐</div>
+    </div>
+    <div class="summary-card" id="fastingCard">
+      <div class="label">🕐 距上餐</div>
+      <div class="value"><span id="fastingTime">--</span><span class="unit">h</span></div>
+      <div class="sub" id="fastingSub">暂无记录</div>
     </div>
   </div>
 
@@ -445,6 +475,12 @@ a{color:var(--green);text-decoration:none}
     <button data-tab="custom" onclick="switchSearchTab('custom')">📦 我的食物</button>
   </div>
   <div id="searchOnlineTip" class="hidden search-status">🔍 输入关键词后点击搜索，从 OpenFoodFacts 开放数据库查找</div>
+  <div style="display:flex;align-items:center;gap:8px;margin:8px 0;padding:8px 12px;background:var(--card);border-radius:12px;border:1px solid var(--border)">
+    <span style="font-size:18px">📱</span>
+    <input type="text" id="barcodeInput" placeholder="输入条形码（如 5901234123457）" style="flex:1;border:none;background:transparent;outline:none;font-size:13px;color:var(--text)" onkeydown="if(event.key==='Enter') searchBarcode()">
+    <button class="btn-secondary" style="padding:4px 10px;font-size:12px;border-radius:8px" onclick="searchBarcode()">扫码查</button>
+    <button class="btn-secondary" style="padding:4px 8px;font-size:12px;border-radius:8px" onclick="scanBarcodeCamera()" title="摄像头扫码">📷</button>
+  </div>
   <div id="searchResults" class="food-list"></div>
 </div>
 
@@ -603,8 +639,17 @@ a{color:var(--green);text-decoration:none}
   <div class="modal-sheet">
     <div class="modal-handle"></div>
     <div class="gram-input-content">
-      <div class="food-name-display" id="giFoodName">食物名</div>
-      <div class="macro-preview" id="giMacroPreview">每100g: 0kcal | 碳水0g 蛋白0g 脂肪0g</div>
+      <div style="display:flex;align-items:flex-start;gap:12px">
+        <div style="flex:1;min-width:0">
+          <div class="food-name-display" id="giFoodName">食物名</div>
+          <div class="macro-preview" id="giMacroPreview">每100g: 0kcal | 碳水0g 蛋白0g 脂肪0g</div>
+        </div>
+        <div style="flex-shrink:0;text-align:center">
+          <div id="giPhotoPreview" style="width:56px;height:56px;border-radius:12px;background:#f0f0f0;overflow:hidden;margin-bottom:4px;display:flex;align-items:center;justify-content:center;font-size:20px;border:1px solid var(--border)">📷</div>
+          <button class="btn-secondary" style="padding:3px 8px;font-size:11px;border-radius:8px" onclick="document.getElementById('giPhotoInput').click()">拍照</button>
+          <input type="file" id="giPhotoInput" accept="image/*" capture="environment" style="display:none" onchange="previewAddPhoto(event)">
+        </div>
+      </div>
       <p style="font-size:13px;color:var(--text2);margin-bottom:8px">输入食用量（<span id="gramUnitLabel">g</span>）：</p>
       <div class="gram-control">
         <button onclick="adjustGram(-10)">−</button>
@@ -853,6 +898,69 @@ document.querySelectorAll('.modal-overlay').forEach(el=>{
 });
 
 // ===== DASHBOARD RENDER =====
+// ===== COPY MEAL TO TODAY =====
+function copyToToday(fromDate, mealType){
+  if(!state.records[fromDate] || !state.records[fromDate][mealType]) return;
+  const items = state.records[fromDate][mealType];
+  if(items.length === 0) return;
+  const today = getDateStr();
+  if(!state.records[today]) state.records[today] = {breakfast:[],lunch:[],dinner:[],snack:[]};
+  items.forEach(item => {
+    state.records[today][mealType].push({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2,8),
+      foodName: item.foodName, grams: item.grams,
+      calories: item.calories, protein: item.protein,
+      carbs: item.carbs, fat: item.fat, mealType: mealType,
+      photo: null,
+    });
+  });
+  saveData();
+  if(fromDate === getDateStr()){
+    renderDashboard();
+  } else {
+    // Switch to today to show the result
+    currentDate = new Date();
+    renderDashboard();
+  }
+  showToast('✅ 已复制 ' + items.length + ' 项到今日');
+}
+
+// ===== TOAST NOTIFICATION =====
+function showToast(msg, duration){
+  duration = duration || 2500;
+  let toast = document.getElementById("appToast");
+  if(!toast){
+    toast = document.createElement("div");
+    toast.id = "appToast";
+    toast.style.cssText = "position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 22px;border-radius:12px;font-size:14px;font-weight:500;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;max-width:85vw;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.2)";
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = "1";
+  if(window._toastTimer) clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => { toast.style.opacity = "0"; }, duration);
+}
+
+// ===== PHOTO PREVIEW =====
+function showPhotoPreview(itemId){
+  for(const date of Object.keys(state.records)){
+    for(const mt of ['breakfast','lunch','dinner','snack']){
+      const item = state.records[date][mt].find(i => i.id === itemId);
+      if(item && item.photo){
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;cursor:pointer';
+        overlay.onclick = () => overlay.remove();
+        const img = document.createElement('img');
+        img.src = item.photo;
+        img.style.cssText = 'max-width:90vw;max-height:80vh;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,.5)';
+        overlay.appendChild(img);
+        document.body.appendChild(overlay);
+        return;
+      }
+    }
+  }
+}
+
 function renderDashboard(){
   const dateStr = state.currentDate;
   document.getElementById('currentDateLabel').textContent = formatDate(dateStr);
@@ -880,6 +988,41 @@ function renderDashboard(){
   document.getElementById('totalCalories').textContent = Math.round(totalCal);
   document.getElementById('totalWeight').textContent = Math.round(totalWeight);
   document.getElementById('mealCount').textContent = mealCount+' 餐';
+
+  // Fasting timer: find latest meal time today
+  let latestTime = null, latestTimeStr = '';
+  MEAL_TYPES.forEach(mt => {
+    records[mt].forEach(item => {
+      if(item.time){
+        if(!latestTime || item.time > latestTime){
+          latestTime = item.time;
+          latestTimeStr = item.time;
+        }
+      }
+    });
+  });
+  if(latestTimeStr){
+    const now = new Date();
+    const [h,m] = latestTimeStr.split(':').map(Number);
+    const lastMealDate = new Date(now);
+    lastMealDate.setHours(h, m, 0, 0);
+    if(lastMealDate > now) lastMealDate.setDate(lastMealDate.getDate() - 1);
+    const diffMs = now - lastMealDate;
+    const diffH = Math.floor(diffMs / 3600000);
+    const diffM = Math.floor((diffMs % 3600000) / 60000);
+    document.getElementById('fastingTime').textContent = diffH + '.' + Math.floor(diffM/6);
+    document.getElementById('fastingSub').textContent = '上次 ' + latestTimeStr + ' · 已断食';
+    const fc = document.getElementById('fastingCard');
+    if(fc){
+      fc.classList.remove('f-warn','f-good','f-great');
+      if(diffH >= 16) fc.classList.add('f-great');
+      else if(diffH >= 12) fc.classList.add('f-good');
+      else fc.classList.add('f-warn');
+    }
+  } else {
+    document.getElementById('fastingTime').textContent = '--';
+    document.getElementById('fastingSub').textContent = '暂无记录';
+  }
 
   // Calorie bar (use target from settings)
   const calTarget = state.targets.calories || 1600;
@@ -981,6 +1124,7 @@ function renderDashboard(){
       items.forEach((item, idx) => {
         itemsHtml += `
           <div class="food-item">
+            ${item.photo ? '<img src="'+item.photo+'" style="width:40px;height:40px;border-radius:8px;object-fit:cover;flex-shrink:0;cursor:pointer" onclick="showPhotoPreview(\''+item.id+'\')">' : ''}
             <span class="food-name">${item.foodName}</span>
             <div>
               <div class="food-gram">${item.grams}g</div>
@@ -1005,6 +1149,7 @@ function renderDashboard(){
           <span class="meal-icon">${MEAL_NAMES[mt].split(' ')[0]}</span>
           ${MEAL_NAMES[mt].split(' ').slice(1).join(' ')}
           <span class="meal-macro">${mealCal}kcal · 🥖${mPctC}% 🥩${mPctP}% 🧈${mPctF}%</span>
+          <button class="meal-copy-btn" onclick='copyToToday("${dateStr}","${mt}")' title="复制此餐到今日">📋</button>
         </div>
         ${itemsHtml}
         <div class="meal-add-btn" onclick="addFoodToMeal('${mt}')">➕ 添加食物</div>
@@ -1466,6 +1611,18 @@ document.addEventListener('click', function(e){
   }
 });
 
+function previewAddPhoto(e){
+  const file = e.target.files?.[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    state.pendingPhoto = ev.target.result;
+    const preview = document.getElementById('giPhotoPreview');
+    if(preview) preview.innerHTML = '<img src="'+ev.target.result+'" style="width:100%;height:100%;object-fit:cover">';
+  };
+  reader.readAsDataURL(file);
+}
+
 function confirmAddFood(){
   const food = state.pendingFood?.food;
   if(!food) return;
@@ -1489,7 +1646,10 @@ function confirmAddFood(){
     carbs: macros.carbs,
     fat: macros.fat,
     mealType: mealType,
+    time: new Date().toLocaleTimeString("zh-CN", {hour:"2-digit",minute:"2-digit"}),
+    photo: state.pendingPhoto || null,
   });
+  state.pendingPhoto = null;
 
   saveData();
   closeModal('gramInputModal');
@@ -1498,6 +1658,86 @@ function confirmAddFood(){
 }
 
 // ===== OPENFOODFACTS API SEARCH =====
+// ===== BARCODE SCANNING =====
+async function searchBarcode(){
+  const code = document.getElementById("barcodeInput").value.trim();
+  if(!code){ showToast("请输入条形码"); return; }
+  const resultsEl = document.getElementById("searchResults");
+  resultsEl.innerHTML = '<div class="search-status">🔍 正在查询条码 ' + code + '...</div>';
+  try{
+    const res = await fetch("https://world.openfoodfacts.org/api/v2/product/" + code + ".json");
+    const data = await res.json();
+    if(data.status === 0 || !data.product){
+      resultsEl.innerHTML = '<div class="search-status">❌ 未找到该条码对应的食品</div>';
+      return;
+    }
+    const p = data.product;
+    const n = p.nutriments || {};
+    const name = p.product_name_zh || p.product_name || "未知食品";
+    const cal = n["energy-kcal_100g"] || 0;
+    const protein = n.proteins_100g || 0;
+    const carbs = n.carbohydrates_100g || 0;
+    const fat = n.fat_100g || 0;
+    if(cal === 0 && protein === 0 && carbs === 0 && fat === 0){
+      resultsEl.innerHTML = '<div class="search-status">❌ 该食品无营养数据</div>';
+      return;
+    }
+    if(!state.apiFoods) state.apiFoods = [];
+    const id = "barcode_" + code + "_" + Date.now();
+    const food = {id, name, caloriesPer100g:cal, proteinPer100g:protein, carbsPer100g:carbs, fatPer100g:fat, servingSize:100, source:"barcode"};
+    state.apiFoods.push(food);
+    renderSearchResults([food], name);
+    document.getElementById("barcodeInput").value = "";
+  } catch(e){
+    resultsEl.innerHTML = '<div class="search-status">❌ 查询失败: ' + e.message + '</div>';
+  }
+}
+
+function scanBarcodeCamera(){
+  if("BarcodeDetector" in window){
+    showToast("📷 打开摄像头中...");
+    const video = document.createElement("video");
+    video.style.cssText = "position:fixed;inset:0;z-index:9999;width:100%;height:100%;object-fit:cover;background:#000";
+    const overlay = document.createElement("div");
+    overlay.style.cssText = "position:fixed;inset:0;z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:80px;background:rgba(0,0,0,.3)";
+    overlay.innerHTML = '<div style="color:#fff;font-size:16px;font-weight:600;text-shadow:0 2px 8px rgba(0,0,0,.5);margin-bottom:16px">📷 将条码对准摄像头</div><button class="btn-secondary" style="background:#fff;color:#333;padding:10px 28px" onclick="video.srcObject?.getTracks().forEach(t=>t.stop());video.remove();overlay.remove()">取消</button>';
+    document.body.appendChild(video);
+    document.body.appendChild(overlay);
+    const detector = new BarcodeDetector({formats:["ean_13","ean_8","upc_a","upc_e","code_128","code_39","itf","qr_code"]});
+    navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}).then(stream => {
+      video.srcObject = stream;
+      video.play();
+      const scanInterval = setInterval(async () => {
+        try{
+          const barcodes = await detector.detect(video);
+          if(barcodes.length > 0){
+            clearInterval(scanInterval);
+            stream.getTracks().forEach(t => t.stop());
+            video.remove();
+            overlay.remove();
+            document.getElementById("barcodeInput").value = barcodes[0].rawValue;
+            searchBarcode();
+          }
+        }catch(e){}
+      }, 1000);
+      setTimeout(() => {
+        clearInterval(scanInterval);
+        stream.getTracks().forEach(t => t.stop());
+        video.remove();
+        overlay.remove();
+        showToast("⌨️ 扫码超时，请手动输入");
+      }, 30000);
+    }).catch(e => {
+      video.remove();
+      overlay.remove();
+      showToast("❌ 无法打开摄像头: " + e.message);
+    });
+  } else {
+    showToast("❌ 浏览器不支持摄像头扫码，请手动输入条码");
+    document.getElementById("barcodeInput").focus();
+  }
+}
+
 function searchOpenFoodFacts(query){
   const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&json=1&page_size=25&fields=product_name,nutriments,product_name_zh,brands`;
   fetch(url)
@@ -1997,6 +2237,31 @@ if('serviceWorker' in navigator){
     console.log('SW registration failed: ', err);
   });
 }
+
+// ===== DARK MODE TOGGLE =====
+function toggleDarkMode(){
+  const html = document.documentElement;
+  const btn = document.getElementById("darkModeBtn");
+  if(html.getAttribute("data-theme") === "dark"){
+    html.removeAttribute("data-theme");
+    if(btn) btn.textContent = "🌙";
+    try{localStorage.setItem("nutrition_dark_mode", "off");}catch(e){}
+  } else {
+    html.setAttribute("data-theme", "dark");
+    if(btn) btn.textContent = "☀️";
+    try{localStorage.setItem("nutrition_dark_mode", "on");}catch(e){}
+  }
+}
+(function(){
+  try{
+    const pref = localStorage.getItem("nutrition_dark_mode");
+    if(pref === "on" || (pref === null && window.matchMedia("(prefers-color-scheme: dark)").matches)){
+      document.documentElement.setAttribute("data-theme", "dark");
+      const btn = document.getElementById("darkModeBtn");
+      if(btn) btn.textContent = "☀️";
+    }
+  }catch(e){}
+})();
 
 // ===== INIT =====
 loadData();
