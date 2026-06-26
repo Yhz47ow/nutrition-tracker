@@ -1848,8 +1848,14 @@ function confirmAddFood(){
 
   saveData();
   closeModal('gramInputModal');
+  var addedName = food.name;
+  var addedGrams = grams;
+  var mealName = mealType === 'breakfast' ? '早餐' : mealType === 'lunch' ? '午餐' : mealType === 'dinner' ? '晚餐' : '加餐';
   state.pendingFood = null;
-  showScreen('dashboard');
+  showToast('✅ ' + addedName + ' ' + addedGrams + 'g → ' + mealName);
+  // Stay on current screen so user can keep adding foods
+  document.getElementById('giGram').value = 100;
+  updateGramPreview();
 }
 
 // ===== OPENFOODFACTS API SEARCH =====
