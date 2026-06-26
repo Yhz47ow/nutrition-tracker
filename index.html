@@ -554,10 +554,11 @@ p,.hd-meals{color:var(--text2)}
 
 <!-- ===== SCREEN: DASHBOARD ===== -->
 <div id="screen-dashboard" class="screen active">
-  <div class="date-nav">
-    <button onclick="changeDate(-1)">‹ 前一天</button>
-    <span class="date-label" id="currentDateLabel">今天</span>
-    <button onclick="changeDate(1)">后一天 ›</button>
+  <div class="date-nav" style="gap:6px">
+    <button onclick="changeDate(-1)" style="flex-shrink:0">‹</button>
+    <input type="date" id="datePicker" onchange="jumpToDate(this.value)" style="flex:1;max-width:180px;padding:6px 8px;border:1px solid var(--border);border-radius:12px;background:var(--card);color:var(--text);font-size:14px;font-weight:600;text-align:center;outline:none">
+    <button onclick="jumpToToday()" style="flex-shrink:0;padding:4px 8px;font-size:11px">今天</button>
+    <button onclick="changeDate(1)" style="flex-shrink:0">›</button>
   </div>
 
   <div class="summary-grid">
@@ -1038,6 +1039,20 @@ function getDateStr(offset){
   return d.toISOString().split('T')[0];
 }
 
+// ===== DATE NAVIGATION =====
+function jumpToDate(dateStr){
+  if(!dateStr) return;
+  state.currentDate = dateStr;
+  document.getElementById('datePicker').value = dateStr;
+  renderDashboard();
+}
+function jumpToToday(){
+  var today = getDateStr();
+  state.currentDate = today;
+  document.getElementById('datePicker').value = today;
+  renderDashboard();
+}
+
 // ===== SCREEN NAVIGATION =====
 function showScreen(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -1055,6 +1070,8 @@ function changeDate(offset){
   const d = new Date(state.currentDate+'T12:00:00');
   d.setDate(d.getDate()+offset);
   state.currentDate = d.toISOString().split('T')[0];
+  var dp = document.getElementById('datePicker');
+  if(dp) dp.value = state.currentDate;
   renderDashboard();
 }
 
@@ -1140,6 +1157,8 @@ function showPhotoPreview(itemId){
 function renderDashboard(){
   const dateStr = state.currentDate;
   document.getElementById('currentDateLabel').textContent = formatDate(dateStr);
+  var dp = document.getElementById('datePicker');
+  if(dp) dp.value = dateStr;
   const records = getTodayRecords(dateStr);
 
   // Calculate totals
@@ -1305,9 +1324,9 @@ function renderDashboard(){
             <div>
               <div class="food-gram">${item.grams}g</div>
               <div class="food-macros">
-                <span>🥖${mPctC}%</span>
-                <span>🥩${mPctP}%</span>
-                <span>🧈${mPctF}%</span>
+                <span>🥖${item.carbs}g</span>
+                <span>🥩${item.protein}g</span>
+                <span>🧈${item.fat}g</span>
               </div>
             </div>
             <div style="text-align:right;flex-shrink:0">
