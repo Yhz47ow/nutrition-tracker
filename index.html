@@ -1156,7 +1156,8 @@ function showPhotoPreview(itemId){
 
 function renderDashboard(){
   const dateStr = state.currentDate;
-  document.getElementById('currentDateLabel').textContent = formatDate(dateStr);
+  var labelEl = document.getElementById('currentDateLabel');
+  if(labelEl) labelEl.textContent = formatDate(dateStr);
   var dp = document.getElementById('datePicker');
   if(dp) dp.value = dateStr;
   const records = getTodayRecords(dateStr);
