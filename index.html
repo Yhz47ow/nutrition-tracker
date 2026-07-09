@@ -1014,6 +1014,18 @@ function calcMacrosForGram(food, grams){
     grams: grams,
   };
 }
+function escapeHtml(value){
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;',
+    "'":'&#39;'
+  }[ch]));
+}
+function escapeJsString(value){
+  return String(value ?? '').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ');
+}
 function getTodayRecords(dateStr){
   if(!state.records[dateStr]){
     state.records[dateStr] = {breakfast:[],lunch:[],dinner:[],snack:[]};
@@ -1318,10 +1330,11 @@ function renderDashboard(){
       itemsHtml = `<div class="food-item" style="opacity:.6"><span class="food-name">暂无记录</span></div>`;
     } else {
       items.forEach((item, idx) => {
+        const itemName = escapeHtml(item.foodName || item.name || '');
         itemsHtml += `
           <div class="food-item">
             ${item.photo ? '<img src="'+item.photo+'" style="width:40px;height:40px;border-radius:8px;object-fit:cover;flex-shrink:0;cursor:pointer" onclick="showPhotoPreview(\''+item.id+'\')">' : ''}
-            <span class="food-name">${item.foodName}</span>
+            <span class="food-name">${itemName}</span>
             <div>
               <div class="food-gram">${item.grams}g</div>
               <div class="food-macros">
@@ -1415,6 +1428,9 @@ function generateRecommendations(totalCal, totalC, totalP, totalF, calTarget){
 
   let html = '';
   scored.forEach(({food}) => {
+    const safeFoodId = escapeJsString(food.id);
+    const safeSource = escapeJsString(food.source || 'builtin');
+    const safeFoodName = escapeHtml(food.name);
     const cal100 = Math.round(food.caloriesPer100g);
     const serving = food.servingSize || 100;
     // Pick a suggested gram that fits remaining
@@ -1425,8 +1441,8 @@ function generateRecommendations(totalCal, totalC, totalP, totalF, calTarget){
     }
     suggestedGram = Math.max(suggestedGram, 10);
 
-    html += `<div class="rec-item" onclick="quickAddRec('${food.id}','${food.source || 'builtin'}',${suggestedGram})">
-      <span class="rec-name">${food.name}</span>
+    html += `<div class="rec-item" onclick="quickAddRec('${safeFoodId}','${safeSource}',${suggestedGram})">
+      <span class="rec-name">${safeFoodName}</span>
       <span class="rec-gram">${suggestedGram}g</span>
       <div class="rec-macros">
         <span>🔥${Math.round(cal100/100*suggestedGram)}</span>
@@ -1434,7 +1450,7 @@ function generateRecommendations(totalCal, totalC, totalP, totalF, calTarget){
         <span>🥩${Math.round(food.proteinPer100g/100*suggestedGram)}</span>
         <span>🧈${Math.round(food.fatPer100g/100*suggestedGram)}</span>
       </div>
-      <button class="rec-add" onclick="event.stopPropagation();quickAddRec('${food.id}','${food.source || 'builtin'}',${suggestedGram})">➕</button>
+      <button class="rec-add" onclick="event.stopPropagation();quickAddRec('${safeFoodId}','${safeSource}',${suggestedGram})">➕</button>
     </div>`;
   });
   recList.innerHTML = html;
@@ -1498,7 +1514,7 @@ function calcFoodRecommend(){
   const matches = allFoods.filter(f => f.name.toLowerCase().includes(query));
   
   if(matches.length === 0){
-    result.innerHTML = '❌ 没有找到「' + query + '」，试试其他关键词或先自定义食物';
+    result.innerHTML = '❌ 没有找到「' + escapeHtml(query) + '」，试试其他关键词或先自定义食物';
     list.innerHTML = '';
     return;
   }
@@ -1509,6 +1525,9 @@ function calcFoodRecommend(){
   // 显示每个匹配食物的推荐克数
   let html = '';
   matches.slice(0, 8).forEach(food => {
+    const safeFoodId = escapeJsString(food.id);
+    const safeSource = escapeJsString(food.source || 'builtin');
+    const safeFoodName = escapeHtml(food.name);
     const c = food.carbsPer100g;
     const p = food.proteinPer100g;
     const ff = food.fatPer100g;
@@ -1549,14 +1568,14 @@ function calcFoodRecommend(){
     const macroStr = `🔥${Math.round(cal)} 🥖${c}g 🥩${p}g 🧈${ff}g`;
     const afterStr = maxGram > 0 ? `≈ 🔥${Math.round(cal/100*suggestedGram)} 🥖${Math.round(c/100*suggestedGram)}g 🥩${Math.round(p/100*suggestedGram)}g 🧈${Math.round(ff/100*suggestedGram)}g` : '';
     
-    html += `<div class="rec-item" onclick="quickAddRec('${food.id}','${food.source||'builtin'}',${suggestedGram})">
-      <span class="rec-name">${food.name}</span>
+    html += `<div class="rec-item" onclick="quickAddRec('${safeFoodId}','${safeSource}',${suggestedGram})">
+      <span class="rec-name">${safeFoodName}</span>
       <span style="font-size:11px;color:var(--text2);text-align:right">
         <div>${macroStr}/100g</div>
         <div style="font-weight:600;color:var(--green)">${suggestion}</div>
         <div style="font-size:10px;color:#999">${afterStr}</div>
       </span>
-      <button class="rec-add" onclick="event.stopPropagation();quickAddRec('${food.id}','${food.source||'builtin'}',${suggestedGram})">➕</button>
+      <button class="rec-add" onclick="event.stopPropagation();quickAddRec('${safeFoodId}','${safeSource}',${suggestedGram})">➕</button>
     </div>`;
   });
   
@@ -1664,7 +1683,7 @@ function doSearch(){
     if(!query){ resultsEl.innerHTML = `<div class="search-status">请输入食物名称</div>`; return; }
     if(window._searchTimer)clearTimeout(window._searchTimer);
     window._searchTimer=setTimeout(()=>{
-      resultsEl.innerHTML = `<div class="search-status">🔍 正在搜索 "${query}"…</div>`;
+      resultsEl.innerHTML = `<div class="search-status">🔍 正在搜索 "${escapeHtml(query)}"…</div>`;
       searchOpenFoodFacts(query);
     },400);
     return;
@@ -1683,7 +1702,7 @@ function renderSearchResults(foods, query){
   const el = document.getElementById('searchResults');
   if(!foods || foods.length === 0){
     el.innerHTML = `<div class="search-status">
-      ${query ? '没有找到「'+query+'」相关的食物' : '暂无食物数据，点击右上角 ➕ 添加自定义食物'}
+      ${query ? '没有找到「'+escapeHtml(query)+'」相关的食物' : '暂无食物数据，点击右上角 ➕ 添加自定义食物'}
     </div>`;
     return;
   }
@@ -1693,8 +1712,10 @@ function renderSearchResults(foods, query){
     const sourceTag = f.source === 'custom' ? '<span class="fli-source">📦 自定义</span>' :
                        f.source === 'api' ? '<span class="fli-source">🌐 联网</span>' :
                        '<span class="fli-source">📖 内置</span>';
-    html += `<div class="food-list-item" onclick="selectFoodForGram('${f.id}','${f.source || 'builtin'}')">
-      <span class="fli-name">${f.name}</span>
+    const safeId = escapeJsString(f.id);
+    const safeSource = escapeJsString(f.source || 'builtin');
+    html += `<div class="food-list-item" onclick="selectFoodForGram('${safeId}','${safeSource}')">
+      <span class="fli-name">${escapeHtml(f.name)}</span>
       ${sourceTag}
       <div class="fli-macros"><span>🔥${Math.round(f.caloriesPer100g)}</span></div>
     </div>`;
@@ -1891,7 +1912,7 @@ async function searchBarcode(){
     renderSearchResults([food], name);
     document.getElementById("barcodeInput").value = "";
   } catch(e){
-    resultsEl.innerHTML = '<div class="search-status">❌ 查询失败: ' + e.message + '</div>';
+      resultsEl.innerHTML = '<div class="search-status">❌ 查询失败: ' + escapeHtml(e.message) + '</div>';
   }
 }
 
@@ -1947,7 +1968,7 @@ function searchOpenFoodFacts(query){
     .then(data => {
       const products = data.products || [];
       if(products.length === 0){
-        document.getElementById('searchResults').innerHTML = `<div class="search-status">没有找到 "${query}" 的联网结果</div>`;
+        document.getElementById('searchResults').innerHTML = `<div class="search-status">没有找到 "${escapeHtml(query)}" 的联网结果</div>`;
         return;
       }
       if(!state.apiFoods) state.apiFoods = [];
@@ -1972,7 +1993,7 @@ function searchOpenFoodFacts(query){
       renderSearchResults(foods, query);
     })
     .catch(err => {
-      document.getElementById('searchResults').innerHTML = `<div class="search-status">⚠️ 联网搜索失败: ${err.message || '网络错误'}</div>`;
+      document.getElementById('searchResults').innerHTML = `<div class="search-status">⚠️ 联网搜索失败: ${escapeHtml(err.message || '网络错误')}</div>`;
     });
 }
 
@@ -2068,7 +2089,7 @@ function updateCalcHelper(){
   const rFat = Math.round(fat * ratio * 10) / 10;
   
   result.value = `🔥${rCal}kcal · 🥖${rCarbs}g · 🥩${rProtein}g · 🧈${rFat}g`;
-  detail.innerHTML = `📊 每100g → 你吃<strong>${actual}${unit}</strong> = 🔥${rCal}kcal | 🥖${rCarbs}g | 🥩${rProtein}g | 🧈${rFat}g`;
+  detail.innerHTML = `📊 每100g → 你吃<strong>${actual}${escapeHtml(unit)}</strong> = 🔥${rCal}kcal | 🥖${rCarbs}g | 🥩${rProtein}g | 🧈${rFat}g`;
   
   // Auto-fill serving if user hasn't set it
   const servingEl = document.getElementById('cfServing');
@@ -2131,11 +2152,13 @@ function renderLibrary(tab){
 function renderLibItem(food, tab){
   const unit = food.unit || 'g';
   const serving = food.servingSize || 100;
-  return `<div class="food-list-item" onclick="${tab==='custom'?'':'selectFoodForGram(\''+food.id+'\',\''+food.source+'\')'}">
-    <span class="fli-name">${food.name}</span>
+  const safeId = escapeJsString(food.id);
+  const safeSource = escapeJsString(food.source || 'builtin');
+  return `<div class="food-list-item" onclick="${tab==='custom'?'':'selectFoodForGram(\''+safeId+'\',\''+safeSource+'\')'}">
+    <span class="fli-name">${escapeHtml(food.name)}</span>
     <div style="display:flex;gap:3px;flex-shrink:0">
-      ${tab==='custom'?`<button class="food-del" onclick="event.stopPropagation();editCustomFood('${food.id}')" style="border:none;background:none;color:#2196F3;cursor:pointer;font-size:13px;padding:2px">✏️</button>`:''}
-      ${tab==='custom'?`<button class="food-del" onclick="event.stopPropagation();deleteCustomFood('${food.id}')" style="border:none;background:none;color:#ccc;cursor:pointer;font-size:14px">✕</button>`:''}
+      ${tab==='custom'?`<button class="food-del" onclick="event.stopPropagation();editCustomFood('${safeId}')" style="border:none;background:none;color:#2196F3;cursor:pointer;font-size:13px;padding:2px">✏️</button>`:''}
+      ${tab==='custom'?`<button class="food-del" onclick="event.stopPropagation();deleteCustomFood('${safeId}')" style="border:none;background:none;color:#ccc;cursor:pointer;font-size:14px">✕</button>`:''}
     </div>
     <div class="fli-macros">
       <span>🔥${Math.round(food.caloriesPer100g)}</span>
@@ -2177,7 +2200,7 @@ function renderHistory(){
     let mealsStr = MEAL_TYPES.map(mt => {
       const items = records[mt];
       if(items.length === 0) return '';
-      return items.map((i,idx) => `<span style="display:inline-flex;align-items:center;gap:2px;margin:1px 2px;padding:1px 4px;background:#f0f0f0;border-radius:4px;white-space:nowrap;font-size:12px">${i.foodName||i.name} <span onclick="event.stopPropagation();deleteFoodItem('${dateStr}','${mt}',${idx});renderHistory();" style="cursor:pointer;color:#e00;opacity:.6;font-size:11px;margin-left:2px">&times;</span></span>`);
+      return items.map((i,idx) => `<span style="display:inline-flex;align-items:center;gap:2px;margin:1px 2px;padding:1px 4px;background:#f0f0f0;border-radius:4px;white-space:nowrap;font-size:12px">${escapeHtml(i.foodName||i.name)} <span onclick="event.stopPropagation();deleteFoodItem('${dateStr}','${mt}',${idx});renderHistory();" style="cursor:pointer;color:#e00;opacity:.6;font-size:11px;margin-left:2px">&times;</span></span>`);
     }).filter(s=>s).join(' | ');
 
     html += `<div class="history-day">
@@ -2292,12 +2315,17 @@ function updateSyncPanelUI(){
 function setupGistSync(){
   let existing='';
   try{existing=localStorage.getItem('nutrition_github_token')||'';}catch(e){}
-  const token=prompt('☁️ GitHub 云同步\n\n把你的 GitHub Token 粘贴在这里\n（在 github.com/settings/tokens 创建，勾选 gist 权限）\n\n创建地址：\nhttps://github.com/settings/tokens\n\n粘贴 Token：',existing);
+  const token=prompt('☁️ GitHub 云同步\n\n把你的 GitHub Token 粘贴在这里\n（在 github.com/settings/tokens 创建，勾选 gist 权限）\n\n留空会取消。建议只给 gist 权限。\n\n粘贴 Token：',existing);
   if(!token) return;
   githubToken=token;
-  localStorage.setItem('nutrition_github_token',token);
+  const shouldSave=confirm('是否把 Token 保存在这台设备上？\n\n确定：以后打开可直接同步\n取消：仅本次使用，关闭页面后需要重新输入');
+  if(shouldSave){
+    localStorage.setItem('nutrition_github_token',token);
+  }else{
+    try{localStorage.removeItem('nutrition_github_token');}catch(e){}
+  }
   updateSyncPanelUI();
-  alert('✅ Token 已保存！现在点「☁️ 上传到云端」即可备份数据');
+  alert(shouldSave?'✅ Token 已保存！现在点「☁️ 上传到云端」即可备份数据':'✅ Token 已临时启用！现在点「☁️ 上传到云端」即可备份数据');
 }
 
 function clearGistConfig(){
@@ -2369,7 +2397,8 @@ async function syncFromCloud(){
     if(!githubToken){alert('请先配置 Token');return;}
     status.textContent='⏳ 查找…';
     try{
-      const res=await fetch('https://api.github.com/users/Yhz47ow/gists?per_page=10',{headers:{'Authorization':'token '+githubToken,'User-Agent':'nutrition-tracker'}});
+      const res=await fetch('https://api.github.com/gists?per_page=30',{headers:{'Authorization':'token '+githubToken,'User-Agent':'nutrition-tracker'}});
+      if(!res.ok) throw new Error('HTTP '+res.status);
       const gists=await res.json();
       const found=gists.find(g=>g.files?.[GIST_FILENAME]);
       if(found){syncGistId=found.id;localStorage.setItem('nutrition_gist_id',syncGistId);}

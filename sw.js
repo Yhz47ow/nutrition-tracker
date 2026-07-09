@@ -1,6 +1,14 @@
 /* 营养追踪 — Service Worker */
-const CACHE_NAME = 'nutrition-tracker-v1';
-const urlsToCache = ['index.html','manifest.json'];
+const CACHE_NAME = 'nutrition-tracker-v2';
+const urlsToCache = [
+  './',
+  'index.html',
+  'manifest.json',
+  'icon-192.png',
+  'icon-512.png',
+  'qrcode.html',
+  'qrcode.png'
+];
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -19,14 +27,18 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
+
   // Network first for API calls, cache first for static assets
-  if (event.request.url.includes('openfoodfacts.org')) {
+  if (event.request.url.includes('openfoodfacts.org') || event.request.url.includes('api.github.com')) {
     // API: network with cache fallback
     event.respondWith(
       fetch(event.request)
         .then(res => {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          if (res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
           return res;
         })
         .catch(() => caches.match(event.request))
@@ -36,7 +48,7 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       caches.match(event.request)
         .then(res => res || fetch(event.request).then(res => {
-          if (event.request.method === 'GET') {
+          if (res.ok) {
             const clone = res.clone();
             caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
           }
