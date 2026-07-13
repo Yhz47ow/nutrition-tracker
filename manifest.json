@@ -1,7 +1,7 @@
 {
   "name": "营养与训练追踪",
   "short_name": "健康追踪",
-  "description": "记录饮食营养、力量训练、组间休息、训练音乐和趋势",
+  "description": "记录饮食营养、力量训练、组间休息和趋势",
   "start_url": "index.html",
   "display": "standalone",
   "orientation": "portrait",

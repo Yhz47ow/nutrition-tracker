@@ -9,14 +9,17 @@
 - 新增 Capacitor 8 iOS/Android 原生工程，Web 资源随安装包内置并支持离线启动。
 - Android 新增组间休息前台服务、精确闹钟、高优先级通知、声音和震动。
 - iOS 新增基于 `UNUserNotificationCenter` 的系统级组间休息通知。
-- iOS 新增 MusicKit 授权、Apple Music 单曲播放、切歌和曲目信息桥接。
 - 新增原生状态栏、安全区、启动页、Android 返回键和触觉反馈适配。
 - 新增统一 App 图标、启动画面、Android release keystore 配置和原生发布文档。
 
 ### Compatibility
 
-- 保留 PWA/Web 运行方式和现有饮食、训练、音乐数据结构。
+- 保留 PWA/Web 运行方式和现有饮食、训练数据结构。
 - 原生 WebView 与浏览器存储域隔离，首次安装通过 JSON 或 GitHub Gist 迁移数据。
+
+### Removed
+
+- 删除训练音乐控制条、外部平台嵌入、本地播放器、白噪音和 iOS MusicKit 集成。
 
 ### Verification
 

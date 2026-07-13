@@ -11,7 +11,6 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png" type="image/png">
 <link rel="stylesheet" href="workout.css?v=2.0.0">
-<link rel="stylesheet" href="workout-music.css?v=2.0.0">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='64' fill='%234CAF50'/%3E%3Ctext x='256' y='360' font-size='320' text-anchor='middle' fill='white' font-family='-apple-system, sans-serif'%3EN%3C/text%3E%3C/svg%3E">
 <title>营养追踪</title>
 <style>
@@ -2261,7 +2260,6 @@ function exportData(){
     customFoods: state.customFoods,
     targets: state.targets,
     ...(window.WorkoutApp ? WorkoutApp.getSyncData() : {}),
-    ...(window.WorkoutMusic ? WorkoutMusic.getSyncData() : {}),
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
@@ -2298,7 +2296,6 @@ function importData(event){
       }
       if(data.targets) Object.assign(state.targets, data.targets);
       if(window.WorkoutApp) WorkoutApp.mergeSyncData(data);
-      if(window.WorkoutMusic) WorkoutMusic.mergeSyncData(data);
       saveData();
       // Reset file input
       event.target.value = '';
@@ -2378,7 +2375,7 @@ async function syncToCloud(){
   const status=document.getElementById('syncStatus');
   if(status) status.textContent='⏳ 上传中…';
   try{
-    const payload={version:4,lastSync:new Date().toISOString(),records:state.records,customFoods:state.customFoods,targets:state.targets,...(window.WorkoutApp?WorkoutApp.getSyncData():{}),...(window.WorkoutMusic?WorkoutMusic.getSyncData():{})};
+    const payload={version:4,lastSync:new Date().toISOString(),records:state.records,customFoods:state.customFoods,targets:state.targets,...(window.WorkoutApp?WorkoutApp.getSyncData():{})};
     if(syncGistId){
       try{
         const existing=await gistApi('GET');
@@ -2455,7 +2452,6 @@ async function syncFromCloud(){
     if(cloud.customFoods){const eid=new Set(state.customFoods.map(f=>f.id));cloud.customFoods.forEach(f=>{if(!eid.has(f.id))state.customFoods.push(f);});}
     if(cloud.targets)Object.assign(state.targets,cloud.targets);
     if(window.WorkoutApp)WorkoutApp.mergeSyncData(cloud);
-    if(window.WorkoutMusic)WorkoutMusic.mergeSyncData(cloud);
     saveData();
     if(status) status.textContent='✅ 已恢复 '+new Date().toLocaleTimeString();
     renderHistory();
@@ -2558,7 +2554,5 @@ console.log('📦 自定义食物 '+state.customFoods.length+' 种');
 <script src="native-app.js?v=2.0.0"></script>
 <script src="workout-core.js?v=2.0.0"></script>
 <script src="workout.js?v=2.0.0"></script>
-<script src="workout-music-core.js?v=2.0.0"></script>
-<script src="workout-music.js?v=2.0.0"></script>
 </body>
 </html>

@@ -51,8 +51,6 @@
   let audioContext = null;
   let nativeTimerOperation = Promise.resolve();
   let nativeRestPermissionRequested = false;
-  let lastRestCueTimerId = null;
-  let lastRestCueSecond = null;
   let pickerSelection = new Set();
   const ui = {
     tab: 'session',
@@ -158,7 +156,7 @@
     if(!screen) return;
     screen.innerHTML = `<div class="workout-page-head">
       <div><div class="workout-page-title">训练记录</div><div class="workout-page-caption">动作、训练与恢复</div></div>
-      <div class="workout-page-actions"><button class="workout-music-page-button" data-music-action="open-settings" title="训练音乐设置">♫</button><button class="workout-primary-action" data-workout-action="open-session">${data.activeWorkout ? '继续训练' : '开始训练'}</button></div>
+      <button class="workout-primary-action" data-workout-action="open-session">${data.activeWorkout ? '继续训练' : '开始训练'}</button>
     </div>
     <div class="workout-segments">
       <button class="${ui.tab === 'session' ? 'active' : ''}" data-workout-action="set-tab" data-tab="session">训练</button>
@@ -420,8 +418,6 @@
     if(!timer || timer.paused || timer.completed) return;
     const remaining = Core.getRemainingMs(timer);
     if(remaining <= 0){
-      lastRestCueTimerId = null;
-      lastRestCueSecond = null;
       timer.completed = true;
       timer.endAt = Date.now();
       persist();
@@ -429,15 +425,6 @@
       renderRestOverlay();
       playCompletionFeedback();
       return;
-    }
-    const remainingSeconds = Math.ceil(remaining / 1000);
-    if(remainingSeconds > 3){
-      lastRestCueTimerId = timer.id;
-      lastRestCueSecond = null;
-    }else if(remainingSeconds > 0 && (lastRestCueTimerId !== timer.id || lastRestCueSecond !== remainingSeconds)){
-      lastRestCueTimerId = timer.id;
-      lastRestCueSecond = remainingSeconds;
-      if(window.WorkoutMusic) WorkoutMusic.playCountdownCue(remainingSeconds);
     }
     const secondsEl = document.querySelector('[data-rest-seconds]');
     const ring = document.querySelector('.workout-rest-ring');
@@ -450,8 +437,6 @@
     const exercise = currentExercise();
     if(!workout || !exercise) return;
     data.restTimer = Core.createRestTimer(exercise.restBetweenSets, {workoutId:workout.id, exerciseInstanceId:exercise.id});
-    lastRestCueTimerId = data.restTimer.id;
-    lastRestCueSecond = null;
     persist();
     scheduleTimer();
     renderRestOverlay();
@@ -460,7 +445,6 @@
   function startOrResume(){
     requestNotificationPermission();
     unlockAudio();
-    if(window.WorkoutMusic) WorkoutMusic.unlock();
     if(!data.activeWorkout){
       data.activeWorkout = Core.createWorkout();
       data.restTimer = null;
