@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">营养与训练追踪</string>
+    <string name="title_activity_main">营养与训练追踪</string>
+    <string name="package_name">com.yhz47ow.nutritiontracker</string>
+    <string name="custom_url_scheme">com.yhz47ow.nutritiontracker</string>
+</resources>

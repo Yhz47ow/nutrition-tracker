@@ -17,6 +17,9 @@
   let audioContext = null;
   let noiseSource = null;
   let noiseGain = null;
+  let nativeAppleState = null;
+  let nativeAppleStateSignature = '';
+  let nativeAppleLoadedSongId = '';
 
   function loadConfig(){
     try{
@@ -46,11 +49,24 @@
   }
 
   function haptic(pattern){
+    if(window.NativeApp?.isNative()){
+      NativeApp.haptic('LIGHT');
+      return;
+    }
     if(navigator.vibrate) navigator.vibrate(pattern || 12);
   }
 
   function platform(){
     return Core.PLATFORMS[config.platform];
+  }
+
+  function nativeApplePlugin(){
+    if(config.platform !== 'apple' || !window.NativeApp?.isNative() || NativeApp.platform() !== 'ios') return null;
+    return NativeApp.plugin('AppleMusic');
+  }
+
+  function isNativeApple(){
+    return Boolean(nativeApplePlugin() && Core.extractAppleMusicId(config.source));
   }
 
   function tracks(){
@@ -65,6 +81,13 @@
   }
 
   function currentMetadata(){
+    if(isNativeApple() && nativeAppleState?.title){
+      return {
+        title:nativeAppleState.title,
+        artist:nativeAppleState.artist || 'Apple Music',
+        coverUrl:nativeAppleState.coverUrl || config.coverUrl || '',
+      };
+    }
     return Core.displayMetadata(config, config.platform === 'local' ? currentTrack() : null);
   }
 
@@ -92,8 +115,10 @@
     const mount = document.getElementById('workoutMusicBar');
     if(!mount) return;
     const metadata = currentMetadata();
-    const external = platform().mode === 'embed' || platform().mode === 'embed-link';
-    const status = external ? `${metadata.artist} · 官方播放器` : metadata.artist;
+    const nativeApple = isNativeApple();
+    const external = (platform().mode === 'embed' || platform().mode === 'embed-link') && !nativeApple;
+    const supportsVolume = !external && !nativeApple;
+    const status = nativeApple ? `${metadata.artist} · iOS MusicKit` : (external ? `${metadata.artist} · 官方播放器` : metadata.artist);
     mount.innerHTML = `<div class="workout-music-main">
       <button class="workout-music-cover" data-music-action="toggle-drawer" title="展开播放器">${coverMarkup(metadata)}</button>
       <button class="workout-music-copy" data-music-action="toggle-drawer"><div class="workout-music-title">${escapeHtml(metadata.title)}</div><div class="workout-music-artist">${escapeHtml(status)}</div></button>
@@ -103,7 +128,7 @@
       <button class="workout-music-control" data-music-action="previous" title="上一首">|‹</button>
       <button class="workout-music-control primary" data-music-action="play-pause" title="${external ? '打开官方播放器' : (isPlaying ? '暂停' : '播放')}">${external ? '↗' : (isPlaying ? 'Ⅱ' : '▶')}</button>
       <button class="workout-music-control" data-music-action="next" title="下一首">›|</button>
-      <label class="workout-music-volume"><span>${config.volume === 0 ? '×' : '♪'}</span><input type="range" min="0" max="100" step="1" value="${Math.round(config.volume * 100)}" data-music-input="volume" ${external ? 'disabled' : ''} aria-label="音乐音量" title="${external ? '请在官方播放器中调节音量' : '音乐音量'}"></label>
+      <label class="workout-music-volume"><span>${config.volume === 0 ? '×' : '♪'}</span><input type="range" min="0" max="100" step="1" value="${Math.round(config.volume * 100)}" data-music-input="volume" ${supportsVolume ? '' : 'disabled'} aria-label="音乐音量" title="${supportsVolume ? '音乐音量' : '请使用系统或官方播放器调节音量'}"></label>
     </div>`;
   }
 
@@ -127,6 +152,16 @@
     const drawer = document.getElementById('workoutMusicDrawer');
     if(!drawer) return;
     const selected = platform();
+
+    if(isNativeApple()){
+      const embed = Core.buildEmbed('apple', config.source, config);
+      const state = nativeAppleState || {};
+      const key = `native-apple:${embed?.src || ''}:${state.title || ''}:${state.playing || false}`;
+      if(drawer.dataset.key === key) return;
+      drawer.dataset.key = key;
+      drawer.innerHTML = `${drawerHeader('Apple Music','iOS MusicKit',embed?.sourceUrl || '')}<div class="workout-music-drawer-empty">${state.title ? `${escapeHtml(state.title)} · ${escapeHtml(state.artist || 'Apple Music')}` : '授权后可播放 Apple Music 单曲；专辑和歌单可使用下方官方播放器'}</div>${embed ? `<div class="workout-music-frame-wrap"><iframe class="workout-music-frame" src="${escapeAttr(embed.src)}" height="220" title="Apple Music 播放器" allow="autoplay; encrypted-media" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation"></iframe></div>` : ''}`;
+      return;
+    }
 
     if(config.platform === 'local'){
       const list = tracks();
@@ -266,6 +301,7 @@
   }
 
   function stopAllPlayback(){
+    if(isNativeApple()) nativeApplePlugin()?.pause().catch(() => {});
     audio.pause();
     stopNoise();
     isPlaying = false;
@@ -274,6 +310,10 @@
 
   function playPause(){
     haptic();
+    if(isNativeApple()){
+      controlNativeApple(isPlaying ? 'pause' : 'play');
+      return;
+    }
     if(platform().mode === 'embed' || platform().mode === 'embed-link'){
       setDrawer(true);
       showToastMessage('请使用上方官方播放器控制播放');
@@ -288,6 +328,10 @@
 
   function changeTrack(delta, withHaptic){
     if(withHaptic !== false) haptic();
+    if(isNativeApple()){
+      controlNativeApple(delta < 0 ? 'previous' : 'next');
+      return;
+    }
     if(config.platform !== 'local'){
       if(platform().mode === 'embed' || platform().mode === 'embed-link'){
         setDrawer(true);
@@ -301,7 +345,7 @@
   }
 
   function setVolume(value, shouldPersist){
-    if(platform().mode === 'embed' || platform().mode === 'embed-link') return;
+    if(platform().mode === 'embed' || platform().mode === 'embed-link' || isNativeApple()) return;
     config.volume = Core.clamp(Number(value) / 100, 0, 1);
     audio.volume = config.volume;
     if(noiseGain) noiseGain.gain.value = config.volume;
@@ -353,6 +397,48 @@
     try{
       navigator.mediaSession.setPositionState({duration:audio.duration, playbackRate:audio.playbackRate || 1, position:Math.min(audio.currentTime, audio.duration)});
     }catch(error){}
+  }
+
+  async function controlNativeApple(action){
+    const appleMusic = nativeApplePlugin();
+    if(!appleMusic) return;
+    try{
+      const authorization = await appleMusic.requestAuthorization();
+      if(!authorization.authorized){
+        showToastMessage('请在系统设置中允许 Apple Music 访问');
+        return;
+      }
+      let state;
+      if(action === 'play'){
+        const songId = Core.extractAppleMusicId(config.source);
+        if(songId && nativeAppleLoadedSongId !== songId){
+          state = await appleMusic.playSong({songId});
+          nativeAppleLoadedSongId = songId;
+        }else state = await appleMusic.play();
+      }else{
+        state = await appleMusic[action]();
+      }
+      applyNativeAppleState(state);
+    }catch(error){
+      showToastMessage(`Apple Music 操作失败：${error.message || '请检查订阅和授权'}`);
+    }
+  }
+
+  function applyNativeAppleState(state){
+    if(!state) return;
+    const signature = JSON.stringify(state);
+    if(signature === nativeAppleStateSignature) return;
+    nativeAppleStateSignature = signature;
+    nativeAppleState = state;
+    isPlaying = Boolean(state.playing);
+    renderBar();
+    if(drawerOpen){ document.getElementById('workoutMusicDrawer').dataset.key = ''; renderDrawer(); }
+  }
+
+  async function syncNativeAppleState(){
+    const appleMusic = nativeApplePlugin();
+    if(!appleMusic) return;
+    try{ applyNativeAppleState(await appleMusic.getState()); }catch(error){}
   }
 
   function playCountdownCue(second){
@@ -414,7 +500,8 @@
     document.getElementById('musicNeteaseType')?.classList.toggle('hidden', selected !== 'netease');
     const state = document.getElementById('musicPlatformState');
     if(state){
-      if(item.fullControl) state.textContent = '统一控制条可完整控制';
+      if(selected === 'apple' && window.NativeApp?.isNative() && NativeApp.platform() === 'ios') state.textContent = 'iOS 单曲使用原生 MusicKit；系统音量由用户控制';
+      else if(item.fullControl) state.textContent = '统一控制条可完整控制';
       else if(item.officialEmbed) state.textContent = '使用官方嵌入播放器；跨域控制由平台播放器完成';
       else state.textContent = '实验性 Web 嵌入；不可用时在平台打开';
     }
@@ -435,6 +522,7 @@
 
   function saveSettings(){
     const previousPlatform = config.platform;
+    const previousSource = config.source;
     const previousNoiseType = config.noiseType;
     const previousPlaylistText = config.playlistText;
     const wasPlaying = isPlaying;
@@ -450,8 +538,11 @@
       noiseType:document.getElementById('musicNoiseType')?.value || 'white',
       volume:Number(document.getElementById('musicDefaultVolume')?.value || 70) / 100,
     });
-    if(previousPlatform !== next.platform) stopAllPlayback();
+    if(previousPlatform !== next.platform || (previousPlatform === 'apple' && previousSource !== next.source)) stopAllPlayback();
     config = next;
+    nativeAppleState = null;
+    nativeAppleStateSignature = '';
+    if(previousPlatform !== next.platform || previousSource !== next.source) nativeAppleLoadedSongId = '';
     if(previousPlatform === 'local' && config.platform === 'local' && previousPlaylistText !== config.playlistText && !runtimeTracks.length){
       audio.pause();
       audio.removeAttribute('src');
@@ -468,6 +559,7 @@
     closeSettings();
     renderBar();
     updateMediaSession();
+    syncNativeAppleState();
     if(drawerOpen) renderDrawer();
     showToastMessage('音乐设置已保存');
   }
@@ -485,10 +577,12 @@
     if(!payload || !payload.musicConfig) return;
     stopAllPlayback();
     config = Core.normalizeConfig(payload.musicConfig);
+    nativeAppleLoadedSongId = '';
     persist();
     document.getElementById('workoutMusicDrawer').dataset.key = '';
     renderBar();
     updateMediaSession();
+    syncNativeAppleState();
     if(drawerOpen) renderDrawer();
   }
 
@@ -511,6 +605,8 @@
     audio.volume = config.volume;
     renderBar();
     updateMediaSession();
+    window.setInterval(syncNativeAppleState, 1800);
+    syncNativeAppleState();
     document.addEventListener('click', event => {
       const button = event.target.closest('[data-music-action]');
       if(button){ event.preventDefault(); handleAction(button); }

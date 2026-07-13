@@ -32,6 +32,10 @@ test('Apple Music URL is normalized to the official embed host', () => {
   assert.equal(new URL(embed.src).hostname, 'embed.music.apple.com');
   assert.equal(new URL(embed.src).protocol, 'https:');
   assert.equal(embed.stableEmbed, true);
+  assert.equal(MusicCore.extractAppleMusicId('https://music.apple.com/cn/album/example/123456789?i=987654321'), '987654321');
+  assert.equal(MusicCore.extractAppleMusicId('https://music.apple.com/cn/song/example/987654321'), '987654321');
+  assert.equal(MusicCore.extractAppleMusicId('https://music.apple.com/cn/album/example/123456789'), '');
+  assert.equal(MusicCore.extractAppleMusicId('203709340'), '203709340');
 });
 
 test('QQ Music and Xiaoyuzhou allow only their own HTTPS hosts', () => {

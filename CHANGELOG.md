@@ -2,6 +2,26 @@
 
 本项目使用语义化版本：修复递增补丁号，兼容功能递增次版本号，不兼容变更递增主版本号。
 
+## [2.0.0] - Unreleased
+
+### Added
+
+- 新增 Capacitor 8 iOS/Android 原生工程，Web 资源随安装包内置并支持离线启动。
+- Android 新增组间休息前台服务、精确闹钟、高优先级通知、声音和震动。
+- iOS 新增基于 `UNUserNotificationCenter` 的系统级组间休息通知。
+- iOS 新增 MusicKit 授权、Apple Music 单曲播放、切歌和曲目信息桥接。
+- 新增原生状态栏、安全区、启动页、Android 返回键和触觉反馈适配。
+- 新增统一 App 图标、启动画面、Android release keystore 配置和原生发布文档。
+
+### Compatibility
+
+- 保留 PWA/Web 运行方式和现有饮食、训练、音乐数据结构。
+- 原生 WebView 与浏览器存储域隔离，首次安装通过 JSON 或 GitHub Gist 迁移数据。
+
+### Verification
+
+- 当前开发机缺少完整 Xcode、Android SDK 和 JDK；正式 `v2.0.0` 发布前必须完成两端编译、签名和真机验收。
+
 ## [1.3.0] - 2026-07-13
 
 ### Added

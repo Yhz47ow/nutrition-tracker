@@ -6,3 +6,9 @@ server/data.db
 ._*
 Thumbs.db
 *.bak
+www/
+android/.gradle/
+android/local.properties
+android/app/build/
+ios/App/DerivedData/
+ios/App/build/

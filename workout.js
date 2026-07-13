@@ -49,6 +49,8 @@
   let tickHandle = null;
   let pageTimerHandle = null;
   let audioContext = null;
+  let nativeTimerOperation = Promise.resolve();
+  let nativeRestPermissionRequested = false;
   let lastRestCueTimerId = null;
   let lastRestCueSecond = null;
   let pickerSelection = new Set();
@@ -312,7 +314,21 @@
     </div><button class="workout-complete-set" data-workout-action="complete-set">完成本组</button>`;
   }
 
-  function requestNotificationPermission(){
+  async function requestNotificationPermission(){
+    const nativeTimer = window.NativeApp?.isNative() ? NativeApp.plugin('RestTimer') : null;
+    if(nativeTimer){
+      try{
+        const result = await nativeTimer.requestAuthorization();
+        if(result && result.notifications === false){
+          showToastMessage('通知权限未开启，App 在后台时无法显示休息结束提醒');
+        }
+        if(!nativeRestPermissionRequested && NativeApp.platform() === 'android' && result && result.exactAlarm === false){
+          nativeRestPermissionRequested = true;
+          await nativeTimer.requestExactAlarmAccess();
+        }
+      }catch(error){ showToastMessage('请在系统设置中允许训练计时通知'); }
+      return;
+    }
     if(!('Notification' in window) || Notification.permission !== 'default') return;
     Notification.requestPermission().catch(() => {});
   }
@@ -347,6 +363,17 @@
   }
 
   function postTimerMessage(type, timer){
+    const nativeTimer = window.NativeApp?.isNative() ? NativeApp.plugin('RestTimer') : null;
+    if(nativeTimer){
+      nativeTimerOperation = nativeTimerOperation.then(async () => {
+        if(type === 'SCHEDULE_REST_NOTIFICATION'){
+          await nativeTimer.schedule({id:timer.id,endAt:timer.endAt,title:'组间休息结束',body:'可以开始下一组了'});
+        }else if(type === 'CANCEL_REST_NOTIFICATION' && timer.id){
+          await nativeTimer.cancel({id:timer.id});
+        }
+      }).catch(error => console.warn('Native rest timer operation failed', error));
+      return;
+    }
     if(!('serviceWorker' in navigator)) return;
     navigator.serviceWorker.ready.then(registration => {
       const worker = navigator.serviceWorker.controller || registration.active;
@@ -440,6 +467,7 @@
       persist();
     }
     document.body.classList.add('workout-session-open');
+    if(window.NativeApp) NativeApp.setDarkSurface(true);
     document.getElementById('workoutSession').classList.add('show');
     renderSession();
     if(data.restTimer){
@@ -458,6 +486,7 @@
       showToastMessage('倒计时仍在继续，结束时会提醒你');
     }
     document.body.classList.remove('workout-session-open');
+    if(window.NativeApp) NativeApp.setDarkSurface(Boolean(data.restTimer));
     document.getElementById('workoutSession').classList.remove('show');
     if(!data.restTimer) document.getElementById('workoutRestOverlay').classList.remove('show');
     renderDashboardCard();
@@ -676,6 +705,7 @@
     document.getElementById('workoutRestOverlay').classList.remove('show');
     document.getElementById('workoutSession').classList.remove('show');
     document.body.classList.remove('workout-session-open');
+    if(window.NativeApp) NativeApp.setDarkSurface(false);
     ui.selectedDate = workout.date;
     ui.historyMonth = monthKey(workout.startedAt);
     renderDashboardCard();
@@ -804,6 +834,10 @@
         if(event.data && event.data.type === 'REST_TIMER_FINISHED') syncTimer();
       });
     }
+    const nativeTimer = window.NativeApp?.isNative() ? NativeApp.plugin('RestTimer') : null;
+    if(nativeTimer?.addListener){
+      nativeTimer.addListener('restTimerFinished', () => syncTimer()).catch(() => {});
+    }
     tickHandle = window.setInterval(() => {
       syncTimer();
       const elapsed = document.querySelector('[data-workout-elapsed]');
@@ -811,6 +845,7 @@
     }, 250);
     if(data.restTimer){
       document.body.classList.add('workout-session-open');
+      if(window.NativeApp) NativeApp.setDarkSurface(true);
       document.getElementById('workoutSession').classList.add('show');
       renderSession();
       syncTimer();

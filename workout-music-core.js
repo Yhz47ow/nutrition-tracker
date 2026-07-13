@@ -55,6 +55,20 @@
     }
   }
 
+  function extractAppleMusicId(value){
+    const source = String(value || '').trim();
+    if(/^\d+$/.test(source)) return source;
+    try{
+      const url = new URL(source);
+      const songId = url.searchParams.get('i');
+      if(songId && /^\d+$/.test(songId)) return songId;
+      const pathId = /\/song\//.test(url.pathname) ? url.pathname.match(/\/(\d{6,})(?:\/)?$/) : null;
+      return pathId ? pathId[1] : '';
+    }catch(error){
+      return '';
+    }
+  }
+
   function titleFromUrl(value){
     try{
       const url = new URL(value);
@@ -162,6 +176,7 @@
     isHttpUrl,
     safeUrl,
     extractNumericId,
+    extractAppleMusicId,
     parseLocalPlaylist,
     normalizeConfig,
     buildEmbed,

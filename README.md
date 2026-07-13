@@ -15,7 +15,7 @@
 | ⏱️ 组间休息 | 环形倒计时、暂停、跳过、+10 秒、声音和震动提醒 |
 | 📈 训练趋势 | 月历查看训练日，回顾每组重量/次数与近期趋势 |
 | 🎵 训练音乐 | 常驻控制条、平台嵌入、本地播放列表、Media Session 和离线白噪音 |
-| 📱 PWA 支持 | 添加到 iPhone 主屏幕后像原生 App 一样使用 |
+| 📱 多端应用 | 支持 PWA，并提供 Capacitor iOS/Android 原生工程 |
 
 ## 🚀 在 iPhone 上使用
 
@@ -102,7 +102,7 @@
 
 倒计时以持久化的 `endAt` 时间戳为准，不依赖 `setInterval` 累加。页面切到后台或设备锁屏后，回到前台会按当前时间立即校准，因此显示不会产生累计偏差。
 
-Web 版本会在用户授权后，通过 Service Worker 尝试发送本地 Web Notification，并在前台播放提示音和震动。iOS/Android 可能在省电或进程被终止时挂起 PWA 的 Service Worker；纯网页没有 `UNNotification` 或 `AlarmManager` 的调度权限，所以此时不能承诺系统级准时唤醒。需要绝对可靠的锁屏提醒时，应把当前 PWA 包装为原生容器，并分别接入 iOS `UNUserNotificationCenter` 与 Android 精确闹钟/前台服务；本版本保证恢复后的时间准确性。
+Web 版本会在用户授权后，通过 Service Worker 尝试发送 Web Notification，并在前台播放提示音和震动。原生版本已经接入 iOS `UNUserNotificationCenter` 与 Android 精确闹钟/前台服务；构建、权限和真机测试见 [`NATIVE_APP.md`](NATIVE_APP.md)。
 
 通知测试方式：
 
@@ -145,6 +145,13 @@ nutrition-tracker/
 ├── workout-music-core.js # 音乐平台 URL 与播放列表核心
 ├── workout-music.js # 音乐控制、嵌入、Media Session 与白噪音
 ├── workout-music.css # 训练音乐控制条样式
+├── native-app.js     # Capacitor 平台、生命周期和触觉桥接
+├── capacitor.config.json # 原生容器配置
+├── scripts/build-web.mjs # 原生内置 Web 资源构建
+├── ios/              # iOS 工程、通知和 MusicKit 插件
+├── android/          # Android 工程、闹钟和前台服务
+├── assets/           # App 图标与启动页源资源
+├── NATIVE_APP.md     # iOS/Android 开发、测试、签名和发布
 ├── MUSIC_INTEGRATION.md # 平台可行性报告
 ├── manifest.json    # PWA 配置文件
 ├── sw.js            # 离线缓存与训练通知
@@ -165,11 +172,21 @@ python3 -m http.server 8080
 
 打开 `http://localhost:8080`。由于 Service Worker 和通知 API 的安全限制，不要通过双击 `index.html` 测试训练通知。
 
-训练核心测试需要 Node.js 18 或更高版本：
+完整测试需要 Node.js 22 或更高版本：
 
 ```bash
-node --test tests/workout-core.test.js tests/workout-music.test.js
+pnpm test
 ```
+
+原生工程要求 Node.js 22、pnpm 11、完整 Xcode 或 Android Studio。初始化与同步：
+
+```bash
+pnpm install --frozen-lockfile
+pnpm test
+pnpm run native:sync
+```
+
+完整步骤见 [`NATIVE_APP.md`](NATIVE_APP.md)。
 
 可选后端：
 

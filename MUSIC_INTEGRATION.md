@@ -12,6 +12,8 @@
 2. QQ音乐、小宇宙尝试嵌入官方 Web 页面，并始终提供“在平台打开”降级入口。
 3. 本地音频播放列表和离线白噪音由当前页面播放，统一控制条可完整控制上一首、播放/暂停、下一首和独立音量，同时接入 Media Session。
 
+Capacitor iOS 版本在此基础上增加第四层：Apple Music 单曲使用原生 MusicKit 授权和播放控制，统一控制条可显示原生曲目信息并执行播放/暂停/切歌。iOS 系统音量仍由侧边键或控制中心管理。Android 继续采用 Web 嵌入，因为 Apple Music Android SDK 需要开发者令牌和服务端签名，不符合当前纯前端约束。
+
 ## 平台能力
 
 | 平台 | 可嵌入方式 | 当前结果 | 自定义控制条限制 |
@@ -22,6 +24,8 @@
 | 小宇宙 | `https://www.xiaoyuzhoufm.com/...` 单集页 | 响应头未明确禁止 iframe，可尝试加载单集页 | 无跨域播放状态和控制接口，失败时外部打开 |
 | 本地音频 | 当前页面 `<audio>` | 完整控制，可加载 URL 列表或本机临时文件 | 远程 URL 是否可播放取决于来源；本机文件刷新后需重新选择 |
 | 白噪音 | Web Audio API | 完整控制，离线可用 | 系统省电或浏览器终止页面时会停止 |
+
+原生 iOS Apple Music 模式需要 iOS 15+、有效 Apple Music 订阅、用户授权以及签名配置中的 MusicKit Capability。单曲链接/ID 使用 MusicKit，专辑和歌单保留官方嵌入降级。
 
 2026-07-13 实测响应头：Apple Embed、网易云外链播放器、QQ Web 播放页和小宇宙首页均返回 HTTP 200；Apple 和网易云未设置阻止当前嵌入方式的 `frame-ancestors`/`X-Frame-Options`。平台可随时调整策略，因此 UI 保留外部打开按钮。
 

@@ -1,0 +1,32 @@
+{
+  "name": "nutrition-tracker-mobile",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Capacitor native shells for the Nutrition and Workout Tracker PWA",
+  "scripts": {
+    "test": "node --test tests/workout-core.test.js tests/workout-music.test.js tests/native-app.test.js",
+    "web:build": "node scripts/build-web.mjs",
+    "native:sync": "pnpm run web:build && cap sync",
+    "native:open:ios": "cap open ios",
+    "native:open:android": "cap open android",
+    "android:debug": "pnpm run native:sync && cd android && ./gradlew assembleDebug",
+    "android:apk": "pnpm run native:sync && cd android && ./gradlew assembleRelease",
+    "android:bundle": "pnpm run native:sync && cd android && ./gradlew bundleRelease"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.4.1",
+    "@capacitor/app": "8.0.0",
+    "@capacitor/core": "8.4.1",
+    "@capacitor/haptics": "8.0.0",
+    "@capacitor/ios": "8.4.1",
+    "@capacitor/splash-screen": "8.0.0",
+    "@capacitor/status-bar": "8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.4.1"
+  },
+  "packageManager": "pnpm@11.7.0",
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "appId": "com.yhz47ow.nutritiontracker",
+  "appName": "营养与训练追踪",
+  "webDir": "www",
+  "backgroundColor": "#0c0f12",
+  "server": {
+    "androidScheme": "https",
+    "iosScheme": "capacitor",
+    "allowNavigation": [
+      "music.163.com",
+      "*.music.163.com",
+      "music.apple.com",
+      "embed.music.apple.com",
+      "*.music.apple.com",
+      "y.qq.com",
+      "*.y.qq.com",
+      "*.qqmusic.qq.com",
+      "xiaoyuzhoufm.com",
+      "*.xiaoyuzhoufm.com"
+    ]
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 800,
+      "launchAutoHide": true,
+      "backgroundColor": "#0c0f12",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "overlaysWebView": true,
+      "style": "DARK",
+      "backgroundColor": "#0c0f12"
+    }
+  },
+  "ios": {
+    "contentInset": "automatic",
+    "scrollEnabled": true,
+    "allowsLinkPreview": false,
+    "preferredContentMode": "mobile"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
+  }
+}
