@@ -1,13 +1,14 @@
 {
-  "name": "营养追踪 — 碳蛋脂记录仪",
-  "short_name": "营养追踪",
-  "description": "记录每餐碳蛋脂比例，科学减脂必备",
+  "name": "营养与训练追踪",
+  "short_name": "健康追踪",
+  "description": "记录饮食营养、力量训练、组间休息和训练趋势",
   "start_url": "index.html",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#f5f7fa",
   "theme_color": "#4CAF50",
   "scope": "./",
+  "categories": ["health", "fitness", "lifestyle"],
   "icons": [
     {
       "src": "icon-192.png",

@@ -1,7 +1,6 @@
-# 🥗 营养追踪 — 碳蛋脂记录仪
+# 营养与训练追踪
 
-一个专业的食物营养追踪 PWA 应用，专为 iPhone/手机设计。
-**记录每餐碳蛋脂比例，科学减脂必备。**
+一个面向手机的饮食与力量训练记录 PWA。饮食功能沿用原有数据结构，训练模块独立存储。
 
 ## ✨ 功能
 
@@ -12,6 +11,9 @@
 | 📝 自定义食物 | 自主创建食物条目，适合速食产品、包装食品（看包装背面营养成分表填入） |
 | 📊 碳蛋脂分析 | 每餐 + 每日的碳水/蛋白质/脂肪比例，环形图直观展示 |
 | 📅 历史记录 | 每天饮食记录自动保存，可回顾任意一天 |
+| 🏋️ 力量训练 | 预设六大肌群动作、自定义动作、多动作与多组记录 |
+| ⏱️ 组间休息 | 环形倒计时、暂停、跳过、+10 秒、声音和震动提醒 |
+| 📈 训练趋势 | 月历查看训练日，回顾每组重量/次数与近期趋势 |
 | 📱 PWA 支持 | 添加到 iPhone 主屏幕后像原生 App 一样使用 |
 
 ## 🚀 在 iPhone 上使用
@@ -76,6 +78,41 @@
 - 按日期查看所有饮食记录
 - 支持清除所有数据
 
+### 🏋️ 训练
+
+- 首页点击「开始训练」，或从底部「训练」进入。
+- 添加一个或多个动作，每个动作可单独设置 10-600 秒组间休息。
+- 填写重量和次数后点击「完成本组」，数据会立即保存并启动倒计时。
+- 「动作库」可搜索预设动作，也可新增、编辑和删除自定义动作。
+- 「历史」使用月历查看训练详情，点击「查看趋势」回顾近期表现。
+
+## 后台倒计时说明
+
+倒计时以持久化的 `endAt` 时间戳为准，不依赖 `setInterval` 累加。页面切到后台或设备锁屏后，回到前台会按当前时间立即校准，因此显示不会产生累计偏差。
+
+Web 版本会在用户授权后，通过 Service Worker 尝试发送本地 Web Notification，并在前台播放提示音和震动。iOS/Android 可能在省电或进程被终止时挂起 PWA 的 Service Worker；纯网页没有 `UNNotification` 或 `AlarmManager` 的调度权限，所以此时不能承诺系统级准时唤醒。需要绝对可靠的锁屏提醒时，应把当前 PWA 包装为原生容器，并分别接入 iOS `UNUserNotificationCenter` 与 Android 精确闹钟/前台服务；本版本保证恢复后的时间准确性。
+
+通知测试方式：
+
+1. 通过 `http://localhost` 或 HTTPS 打开应用并允许通知。
+2. 开始训练，将休息设为 10-30 秒并完成一组。
+3. 分别测试前台、切到其他 App、锁屏后返回、暂停后恢复和 `+10秒`。
+4. 确认归零后显示「开始下一组」，前台有声音/震动，支持通知的后台环境出现系统通知。
+
+## 数据与迁移
+
+原饮食键保持不变：`nutrition_records`、`nutrition_custom_foods`、`nutrition_targets`。训练模块首次启动执行幂等迁移，新增：
+
+- `nutrition_workout_schema_version`
+- `nutrition_workouts_v1`
+- `nutrition_custom_exercises_v1`
+- `nutrition_active_workout_v1`
+- `nutrition_rest_timer_v1`
+
+无训练数据的旧用户会得到空数组，不会重写饮食记录。导出文件和 GitHub Gist 格式升级为版本 3，仍能导入旧版仅含饮食数据的文件。
+
+可选 Node 后端启动时执行 `CREATE TABLE IF NOT EXISTS` 迁移，新增 `workout_records`、`workout_exercises`、`workout_sets`、`custom_exercises`，迁移版本记录在 `schema_migrations`。现有 `users`、`food_records`、`custom_foods`、`targets` 不变。
+
 ## ⚖️ 碳蛋脂参考目标
 
 | 目标 | 碳水 | 蛋白质 | 脂肪 |
@@ -88,17 +125,48 @@
 
 ```
 nutrition-tracker/
-├── index.html       # 主程序（所有功能都在这里）
+├── index.html       # 饮食主程序与训练入口
+├── workout-core.js  # 训练数据、迁移与时间戳计时核心
+├── workout.js       # 动作库、训练、历史与通知交互
+├── workout.css      # 训练模块样式
 ├── manifest.json    # PWA 配置文件
-├── sw.js           # 离线缓存服务
+├── sw.js            # 离线缓存与训练通知
+├── server/          # 可选 Node.js + sql.js 同步服务
+├── tests/           # 训练核心单元测试
+├── CHANGELOG.md     # 版本记录
 └── README.md       # 本文件
+```
+
+## 本地运行与验证
+
+前端无需构建：
+
+```bash
+cd nutrition-tracker
+python3 -m http.server 8080
+```
+
+打开 `http://localhost:8080`。由于 Service Worker 和通知 API 的安全限制，不要通过双击 `index.html` 测试训练通知。
+
+训练核心测试需要 Node.js 18 或更高版本：
+
+```bash
+node --test tests/workout-core.test.js
+```
+
+可选后端：
+
+```bash
+cd server
+npm install
+JWT_SECRET="请替换为随机长字符串" npm start
 ```
 
 ## 🔒 隐私说明
 
-- 所有数据仅保存在你的手机浏览器本地存储中
+- 默认情况下，所有数据仅保存在你的手机浏览器本地存储中
 - 联网搜索仅用于查询食物营养数据（OpenFoodFacts 开放数据库）
-- **不会上传任何个人数据到服务器**
+- 只有用户主动执行 GitHub Gist 上传或配置可选同步后端时，数据才会离开本机
 
 ## 👨‍🍳 小贴士
 

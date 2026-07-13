@@ -7,8 +7,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="营养追踪">
 <meta name="theme-color" content="#4CAF50">
-<meta name="description" content="专业食物营养追踪器 — 记录每餐碳蛋脂比例">
+<meta name="description" content="记录饮食营养、力量训练、组间休息和训练趋势">
 <link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="workout.css">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='64' fill='%234CAF50'/%3E%3Ctext x='256' y='360' font-size='320' text-anchor='middle' fill='white' font-family='-apple-system, sans-serif'%3EN%3C/text%3E%3C/svg%3E">
 <title>营养追踪</title>
 <style>
@@ -580,6 +581,9 @@ p,.hd-meals{color:var(--text2)}
     </div>
   </div>
 
+  <!-- Workout summary is rendered by workout.js without changing nutrition state. -->
+  <div id="workoutDashboardCard"></div>
+
   <!-- Macro ring -->
   <div class="macro-ring-wrap">
     <div class="macro-ring" id="macroRing">
@@ -669,6 +673,9 @@ p,.hd-meals{color:var(--text2)}
   </div>
   <div id="libContent"></div>
 </div>
+
+<!-- ===== SCREEN: WORKOUT ===== -->
+<div id="screen-workout" class="screen workout-screen-shell"></div>
 
 <!-- ===== SCREEN: HISTORY ===== -->
 <div id="screen-history" class="screen">
@@ -863,6 +870,9 @@ p,.hd-meals{color:var(--text2)}
   </button>
   <button class="tab-item" data-screen="library" onclick="showScreen('library')">
     <span class="tab-icon">📚</span>食物库
+  </button>
+  <button class="tab-item" data-screen="workout" onclick="showScreen('workout')">
+    <span class="tab-icon">●</span>训练
   </button>
   <button class="tab-item" data-screen="history" onclick="showScreen('history')">
     <span class="tab-icon">📅</span>记录
@@ -1074,6 +1084,7 @@ function showScreen(name){
   if(name==='dashboard') renderDashboard();
   if(name==='search'){ renderSearchResults(getAllFoods()); }
   if(name==='library') renderLibrary('builtin');
+  if(name==='workout' && window.WorkoutApp) WorkoutApp.render();
   if(name==='history') renderHistory();
 }
 
@@ -2231,11 +2242,12 @@ function clearAllData(){
 // ===== EXPORT DATA =====
 function exportData(){
   const data = {
-    version: 1,
+    version: 3,
     exportedAt: new Date().toISOString(),
     records: state.records,
     customFoods: state.customFoods,
     targets: state.targets,
+    ...(window.WorkoutApp ? WorkoutApp.getSyncData() : {}),
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
@@ -2271,6 +2283,7 @@ function importData(event){
         });
       }
       if(data.targets) Object.assign(state.targets, data.targets);
+      if(window.WorkoutApp) WorkoutApp.mergeSyncData(data);
       saveData();
       // Reset file input
       event.target.value = '';
@@ -2350,7 +2363,7 @@ async function syncToCloud(){
   const status=document.getElementById('syncStatus');
   if(status) status.textContent='⏳ 上传中…';
   try{
-    const payload={version:2,lastSync:new Date().toISOString(),records:state.records,customFoods:state.customFoods,targets:state.targets};
+    const payload={version:3,lastSync:new Date().toISOString(),records:state.records,customFoods:state.customFoods,targets:state.targets,...(window.WorkoutApp?WorkoutApp.getSyncData():{})};
     if(syncGistId){
       try{
         const existing=await gistApi('GET');
@@ -2376,6 +2389,10 @@ async function syncToCloud(){
             cloud.customFoods.forEach(f=>foodMap.set(f.id,f));
             (payload.customFoods||[]).forEach(f=>foodMap.set(f.id,f));
             payload.customFoods=[...foodMap.values()];
+          }
+          if(window.WorkoutApp){
+            WorkoutApp.mergeSyncData(cloud,{preferLocal:true});
+            Object.assign(payload,WorkoutApp.getSyncData());
           }
         }
       }catch(e){}
@@ -2422,6 +2439,7 @@ async function syncFromCloud(){
     });
     if(cloud.customFoods){const eid=new Set(state.customFoods.map(f=>f.id));cloud.customFoods.forEach(f=>{if(!eid.has(f.id))state.customFoods.push(f);});}
     if(cloud.targets)Object.assign(state.targets,cloud.targets);
+    if(window.WorkoutApp)WorkoutApp.mergeSyncData(cloud);
     saveData();
     if(status) status.textContent='✅ 已恢复 '+new Date().toLocaleTimeString();
     renderHistory();
@@ -2521,5 +2539,7 @@ console.log('📊 内置食物 '+BUILTIN_FOODS.length+' 种');
 console.log('📦 自定义食物 '+state.customFoods.length+' 种');
 
 </script>
+<script src="workout-core.js"></script>
+<script src="workout.js"></script>
 </body>
 </html>

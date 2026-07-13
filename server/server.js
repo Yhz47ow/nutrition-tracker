@@ -94,6 +94,77 @@ async function initDB() {
     )
   `);
 
+  // v1.2.0 workout schema migration. CREATE IF NOT EXISTS keeps existing data intact.
+  db.run(`
+    CREATE TABLE IF NOT EXISTS schema_migrations (
+      version INTEGER PRIMARY KEY,
+      applied_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS workout_records (
+      id TEXT NOT NULL,
+      user_id INTEGER NOT NULL,
+      date TEXT NOT NULL,
+      started_at INTEGER NOT NULL,
+      ended_at INTEGER,
+      duration INTEGER NOT NULL DEFAULT 0,
+      note TEXT NOT NULL DEFAULT '',
+      estimated_calories INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (id, user_id),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS workout_exercises (
+      id TEXT NOT NULL,
+      workout_id TEXT NOT NULL,
+      user_id INTEGER NOT NULL,
+      exercise_id TEXT NOT NULL,
+      exercise_name TEXT NOT NULL,
+      body_part TEXT NOT NULL,
+      rest_between_sets INTEGER NOT NULL DEFAULT 90,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (id, user_id),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS workout_sets (
+      id TEXT NOT NULL,
+      workout_exercise_id TEXT NOT NULL,
+      user_id INTEGER NOT NULL,
+      set_number INTEGER NOT NULL,
+      weight REAL NOT NULL DEFAULT 0,
+      reps INTEGER NOT NULL DEFAULT 0,
+      completed INTEGER NOT NULL DEFAULT 0,
+      completed_at INTEGER,
+      PRIMARY KEY (id, user_id),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS custom_exercises (
+      id TEXT NOT NULL,
+      user_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      body_part TEXT NOT NULL,
+      note TEXT NOT NULL DEFAULT '',
+      is_custom INTEGER NOT NULL DEFAULT 1,
+      PRIMARY KEY (id, user_id),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  db.run('CREATE INDEX IF NOT EXISTS idx_workout_records_user_date ON workout_records(user_id, date)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_workout_exercises_workout ON workout_exercises(user_id, workout_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_workout_sets_exercise ON workout_sets(user_id, workout_exercise_id)');
+  db.run('INSERT OR IGNORE INTO schema_migrations (version) VALUES (2)');
+
   saveDB();
   console.log('✅ 数据库初始化完成');
 }
@@ -221,7 +292,7 @@ app.get('/api/me', authMiddleware, (req, res) => {
 app.post('/api/sync/upload', authMiddleware, (req, res) => {
   try {
     const userId = req.userId;
-    const { records, customFoods, targets } = req.body;
+    const { records, customFoods, targets, workouts, customExercises } = req.body;
 
     // \u4f7f\u7528\u4e8b\u52a1\u4fdd\u62a4\u6570\u636e\u5b8c\u6574\u6027
     db.run("BEGIN");
@@ -229,6 +300,14 @@ app.post('/api/sync/upload', authMiddleware, (req, res) => {
       // \u5220\u9664\u65e7\u6570\u636e
       db.run("DELETE FROM food_records WHERE user_id = ?", [userId]);
       db.run("DELETE FROM custom_foods WHERE user_id = ?", [userId]);
+      if (Array.isArray(workouts)) {
+        db.run("DELETE FROM workout_sets WHERE user_id = ?", [userId]);
+        db.run("DELETE FROM workout_exercises WHERE user_id = ?", [userId]);
+        db.run("DELETE FROM workout_records WHERE user_id = ?", [userId]);
+      }
+      if (Array.isArray(customExercises)) {
+        db.run("DELETE FROM custom_exercises WHERE user_id = ?", [userId]);
+      }
 
       // \u63d2\u5165\u996e\u98df\u8bb0\u5f55
       if (records) {
@@ -280,6 +359,62 @@ app.post('/api/sync/upload', authMiddleware, (req, res) => {
           db.run("INSERT INTO targets (user_id, calories, carbs, protein, fat) VALUES (?, ?, ?, ?, ?)",
             [userId, targets.calories || 1600, targets.carbs || 160, targets.protein || 120, targets.fat || 44]);
         }
+      }
+
+      if (Array.isArray(workouts)) {
+        const insertWorkout = db.prepare(`
+          INSERT INTO workout_records (id, user_id, date, started_at, ended_at, duration, note, estimated_calories)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        const insertExercise = db.prepare(`
+          INSERT INTO workout_exercises (id, workout_id, user_id, exercise_id, exercise_name, body_part, rest_between_sets, sort_order)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        const insertSet = db.prepare(`
+          INSERT INTO workout_sets (id, workout_exercise_id, user_id, set_number, weight, reps, completed, completed_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+
+        workouts.forEach((workout, workoutIndex) => {
+          const workoutId = String(workout.id || `workout_${workoutIndex}`);
+          insertWorkout.run([
+            workoutId, userId, workout.date || '', workout.startedAt || 0,
+            workout.endedAt == null ? null : workout.endedAt,
+            workout.duration || 0, workout.note || '', workout.estimatedCalories || 0,
+          ]);
+          (workout.exercises || []).forEach((exercise, exerciseIndex) => {
+            const instanceId = String(exercise.id || `${workoutId}_exercise_${exerciseIndex}`);
+            insertExercise.run([
+              instanceId, workoutId, userId, exercise.exerciseId || '',
+              exercise.exerciseName || exercise.name || '', exercise.bodyPart || '其他',
+              exercise.restBetweenSets || 90, exercise.order == null ? exerciseIndex : exercise.order,
+            ]);
+            (exercise.sets || []).forEach((set, setIndex) => {
+              insertSet.run([
+                String(set.id || `${instanceId}_set_${setIndex}`), instanceId, userId,
+                set.setNumber || setIndex + 1, set.weight || 0, set.reps || 0,
+                set.completed ? 1 : 0, set.completedAt == null ? null : set.completedAt,
+              ]);
+            });
+          });
+        });
+        insertWorkout.free();
+        insertExercise.free();
+        insertSet.free();
+      }
+
+      if (Array.isArray(customExercises)) {
+        const insertCustomExercise = db.prepare(`
+          INSERT INTO custom_exercises (id, user_id, name, body_part, note, is_custom)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `);
+        customExercises.forEach(exercise => {
+          insertCustomExercise.run([
+            exercise.id, userId, exercise.name || '', exercise.bodyPart || '其他',
+            exercise.note || '', exercise.isCustom === false ? 0 : 1,
+          ]);
+        });
+        insertCustomExercise.free();
       }
 
       db.run("COMMIT");
@@ -344,7 +479,73 @@ app.get('/api/sync/download', authMiddleware, (req, res) => {
     }
     targetStmt.free();
 
-    res.json({ records, customFoods, targets });
+    // 获取训练记录及其动作、组明细
+    const workouts = [];
+    const workoutMap = new Map();
+    const workoutStmt = db.prepare(`
+      SELECT id, date, started_at, ended_at, duration, note, estimated_calories
+      FROM workout_records WHERE user_id = ? ORDER BY started_at DESC
+    `);
+    workoutStmt.bind([userId]);
+    while (workoutStmt.step()) {
+      const [id, date, startedAt, endedAt, duration, note, estimatedCalories] = workoutStmt.get();
+      const workout = {
+        id, date, startedAt, endedAt, duration,
+        note: note || '', estimatedCalories, exercises: [],
+      };
+      workouts.push(workout);
+      workoutMap.set(id, workout);
+    }
+    workoutStmt.free();
+
+    const workoutExerciseMap = new Map();
+    const exerciseStmt = db.prepare(`
+      SELECT id, workout_id, exercise_id, exercise_name, body_part, rest_between_sets, sort_order
+      FROM workout_exercises WHERE user_id = ? ORDER BY workout_id, sort_order
+    `);
+    exerciseStmt.bind([userId]);
+    while (exerciseStmt.step()) {
+      const [id, workoutId, exerciseId, exerciseName, bodyPart, restBetweenSets, order] = exerciseStmt.get();
+      const exercise = {
+        id, exerciseId, exerciseName, bodyPart,
+        restBetweenSets, order, sets: [],
+      };
+      const workout = workoutMap.get(workoutId);
+      if (workout) workout.exercises.push(exercise);
+      workoutExerciseMap.set(id, exercise);
+    }
+    exerciseStmt.free();
+
+    const setStmt = db.prepare(`
+      SELECT id, workout_exercise_id, set_number, weight, reps, completed, completed_at
+      FROM workout_sets WHERE user_id = ? ORDER BY workout_exercise_id, set_number
+    `);
+    setStmt.bind([userId]);
+    while (setStmt.step()) {
+      const [id, workoutExerciseId, setNumber, weight, reps, completed, completedAt] = setStmt.get();
+      const exercise = workoutExerciseMap.get(workoutExerciseId);
+      if (exercise) {
+        exercise.sets.push({
+          id, setNumber, weight, reps,
+          completed: Boolean(completed), completedAt,
+        });
+      }
+    }
+    setStmt.free();
+
+    const customExerciseStmt = db.prepare(`
+      SELECT id, name, body_part, note, is_custom
+      FROM custom_exercises WHERE user_id = ? ORDER BY name
+    `);
+    customExerciseStmt.bind([userId]);
+    const customExercises = [];
+    while (customExerciseStmt.step()) {
+      const [id, name, bodyPart, note, isCustom] = customExerciseStmt.get();
+      customExercises.push({ id, name, bodyPart, note: note || '', isCustom: Boolean(isCustom) });
+    }
+    customExerciseStmt.free();
+
+    res.json({ records, customFoods, targets, workoutSchemaVersion: 1, workouts, customExercises });
   } catch (e) {
     res.status(500).json({ error: '下载失败: ' + e.message });
   }
@@ -366,5 +567,3 @@ async function startServer() {
 }
 
 startServer();
-
-

@@ -1,8 +1,8 @@
-# 营养追踪 — Node.js 服务器临时文件
 node_modules/
+server/node_modules/
+server/data.db
 *.log
 .DS_Store
+._*
 Thumbs.db
-
-# Backup files
 *.bak

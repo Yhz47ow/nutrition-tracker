@@ -1,6 +1,6 @@
 {
   "name": "nutrition-tracker-server",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "营养追踪后端服务器 — 用户认证 + 数据存储",
   "main": "server.js",
   "scripts": {
