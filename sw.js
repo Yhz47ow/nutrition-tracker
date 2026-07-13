@@ -1,11 +1,11 @@
 /* 营养追踪 — Service Worker */
-const CACHE_NAME = 'nutrition-tracker-v3';
+const CACHE_NAME = 'nutrition-tracker-v4';
 const urlsToCache = [
   './',
   'index.html',
-  'workout.css',
-  'workout-core.js',
-  'workout.js',
+  'workout.css?v=1.2.1',
+  'workout-core.js?v=1.2.1',
+  'workout.js?v=1.2.1',
   'manifest.json',
   'icon-192.png',
   'icon-512.png',

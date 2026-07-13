@@ -252,6 +252,13 @@ body.workout-session-open>.app-header,body.workout-session-open>.tab-bar{display
   font-size:16px;font-weight:800;cursor:pointer;
 }
 .workout-picker-list{display:flex;flex-direction:column;gap:5px;max-height:48vh;overflow-y:auto;margin-bottom:10px}
+.workout-picker-group{display:flex;flex-direction:column;gap:5px}
+.workout-picker-group+.workout-picker-group{margin-top:8px}
+.workout-picker-group-title{
+  display:flex;align-items:center;justify-content:space-between;padding:4px 3px 2px;
+  color:var(--text2);font-size:12px;font-weight:800;
+}
+.workout-picker-group-title span:last-child{font-size:10px;font-weight:600}
 .workout-picker-item{
   display:flex;align-items:center;gap:9px;border:1px solid var(--border);border-radius:9px;padding:9px;background:var(--card);cursor:pointer;
 }

@@ -7,7 +7,7 @@
   }
 
   const Core = window.WorkoutCore;
-  const BODY_PARTS = ['全部','胸部','背部','腿部','肩部','手臂','核心'];
+  const BODY_PARTS = ['全部','胸部','背部','腿部','肩部','手臂','核心','其他'];
   const BODY_PART_SHORT = {胸部:'胸',背部:'背',腿部:'腿',肩部:'肩',手臂:'臂',核心:'核',其他:'其'};
   const PRESET_EXERCISES = Object.freeze([
     {id:'chest-bench-press',name:'杠铃卧推',bodyPart:'胸部',note:'胸大肌、肱三头肌'},
@@ -54,6 +54,7 @@
     tab: 'session',
     libraryFilter: '全部',
     librarySearch: '',
+    pickerFilter: '全部',
     pickerSearch: '',
     historyMonth: monthKey(Date.now()),
     selectedDate: latestWorkoutDate(),
@@ -448,6 +449,7 @@
 
   function openPicker(){
     pickerSelection = new Set();
+    ui.pickerFilter = '全部';
     ui.pickerSearch = '';
     renderPicker();
     document.getElementById('workoutPickerModal').classList.add('show');
@@ -456,11 +458,22 @@
   function renderPicker(){
     const mount = document.getElementById('workoutPickerContent');
     if(!mount) return;
-    const exerciseList = filteredExercises(ui.pickerSearch, '全部');
+    const exerciseList = filteredExercises(ui.pickerSearch, ui.pickerFilter);
+    const visibleParts = ui.pickerFilter === '全部' ? BODY_PARTS.slice(1) : [ui.pickerFilter];
+    const groupedList = visibleParts.map(part => {
+      const exercises = exerciseList.filter(exercise => exercise.bodyPart === part);
+      if(!exercises.length) return '';
+      return `<div class="workout-picker-group"><div class="workout-picker-group-title"><span>${escapeHtml(part)}</span><span>${exercises.length}</span></div>${exercises.map(renderPickerItem).join('')}</div>`;
+    }).join('');
     mount.innerHTML = `<div class="workout-modal-head"><div class="workout-modal-title">添加训练动作</div><button class="workout-modal-close" data-workout-action="close-modal" data-modal="workoutPickerModal">×</button></div>
     <div class="workout-toolbar"><input class="workout-search" type="search" placeholder="搜索动作或肌群" value="${escapeAttr(ui.pickerSearch)}" data-workout-input="picker-search"><button class="workout-add-custom" data-workout-action="new-custom" title="新建自定义动作">＋</button></div>
-    <div class="workout-picker-list">${exerciseList.map(exercise => `<label class="workout-picker-item"><input type="checkbox" data-workout-input="picker-check" data-id="${escapeAttr(exercise.id)}" ${pickerSelection.has(exercise.id) ? 'checked' : ''}><span class="workout-picker-name">${escapeHtml(exercise.name)}</span><span class="workout-picker-part">${escapeHtml(exercise.bodyPart)}</span></label>`).join('') || '<div class="workout-empty">没有匹配动作</div>'}</div>
+    <div class="workout-filter-row">${BODY_PARTS.map(part => `<button class="${ui.pickerFilter === part ? 'active' : ''}" data-workout-action="picker-filter" data-part="${escapeAttr(part)}">${escapeHtml(part)}</button>`).join('')}</div>
+    <div class="workout-picker-list">${groupedList || '<div class="workout-empty">没有匹配动作</div>'}</div>
     <button class="workout-modal-submit" data-workout-action="confirm-picker">添加所选${pickerSelection.size ? `（${pickerSelection.size}）` : ''}</button>`;
+  }
+
+  function renderPickerItem(exercise){
+    return `<label class="workout-picker-item"><input type="checkbox" data-workout-input="picker-check" data-id="${escapeAttr(exercise.id)}" ${pickerSelection.has(exercise.id) ? 'checked' : ''}><span class="workout-picker-name">${escapeHtml(exercise.name)}</span><span class="workout-picker-part">${exercise.isCustom ? '自定义' : escapeHtml(exercise.bodyPart)}</span></label>`;
   }
 
   function addSelectedExercises(){
@@ -496,7 +509,7 @@
     const mount = document.getElementById('workoutExerciseContent');
     mount.innerHTML = `<div class="workout-modal-head"><div class="workout-modal-title">${exercise ? '编辑自定义动作' : '新建自定义动作'}</div><button class="workout-modal-close" data-workout-action="close-modal" data-modal="workoutExerciseModal">×</button></div>
     <div class="workout-form-group"><label>动作名称</label><input id="workoutCustomName" maxlength="40" value="${escapeAttr(exercise ? exercise.name : '')}" placeholder="例如：地雷管划船"></div>
-    <div class="workout-form-group"><label>目标肌群</label><select id="workoutCustomPart">${BODY_PARTS.filter(part => part !== '全部').map(part => `<option value="${part}" ${(exercise && exercise.bodyPart === part) ? 'selected' : ''}>${part}</option>`).join('')}</select></div>
+    <div class="workout-form-group"><label>肌群分类 *</label><select id="workoutCustomPart">${BODY_PARTS.filter(part => part !== '全部').map(part => `<option value="${part}" ${(exercise && exercise.bodyPart === part) ? 'selected' : ''}>${part}</option>`).join('')}</select></div>
     <div class="workout-form-group"><label>备注</label><textarea id="workoutCustomNote" maxlength="160" placeholder="器械设置、动作提示等">${escapeHtml(exercise ? exercise.note : '')}</textarea></div>
     <button class="workout-modal-submit" data-workout-action="save-custom">保存动作</button>`;
     document.getElementById('workoutExerciseModal').classList.add('show');
@@ -508,16 +521,23 @@
     const bodyPart = document.getElementById('workoutCustomPart').value;
     const note = document.getElementById('workoutCustomNote').value.trim();
     if(!name){ showToastMessage('请输入动作名称'); return; }
+    let savedExerciseId = ui.editingExerciseId;
     if(ui.editingExerciseId){
       const index = data.customExercises.findIndex(item => item.id === ui.editingExerciseId);
       if(index >= 0) data.customExercises[index] = Core.normalizeCustomExercise({...data.customExercises[index], name, bodyPart, note});
     }else{
-      data.customExercises.push(Core.normalizeCustomExercise({id:Core.createId('custom_exercise'), name, bodyPart, note, isCustom:true}));
+      const customExercise = Core.normalizeCustomExercise({id:Core.createId('custom_exercise'), name, bodyPart, note, isCustom:true});
+      savedExerciseId = customExercise.id;
+      data.customExercises.push(customExercise);
     }
     persist();
     closeModal('workoutExerciseModal');
     renderWorkoutScreen();
-    if(document.getElementById('workoutPickerModal').classList.contains('show')) renderPicker();
+    if(document.getElementById('workoutPickerModal').classList.contains('show')){
+      ui.pickerFilter = bodyPart;
+      if(savedExerciseId) pickerSelection.add(savedExerciseId);
+      renderPicker();
+    }
     showToastMessage('动作已保存');
   }
 
@@ -675,6 +695,7 @@
     if(action === 'close-session') closeSession();
     if(action === 'set-tab'){ ui.tab = button.dataset.tab; renderWorkoutScreen(); }
     if(action === 'library-filter'){ ui.libraryFilter = button.dataset.part; renderWorkoutScreen(); }
+    if(action === 'picker-filter'){ ui.pickerFilter = button.dataset.part; renderPicker(); }
     if(action === 'new-custom') openCustomExercise();
     if(action === 'edit-custom') openCustomExercise(button.dataset.id);
     if(action === 'delete-custom'){
