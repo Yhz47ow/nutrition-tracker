@@ -16,9 +16,6 @@ const assets = [
   'workout-core.js',
   'workout.js',
   'workout.css',
-  'workout-music-core.js',
-  'workout-music.js',
-  'workout-music.css',
 ];
 
 await rm(output, { recursive: true, force: true });

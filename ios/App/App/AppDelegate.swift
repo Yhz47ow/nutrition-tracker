@@ -1,6 +1,5 @@
 import UIKit
 import Capacitor
-import AVFoundation
 import CapApp_SPM
 
 @UIApplicationMain
@@ -9,12 +8,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
-            try AVAudioSession.sharedInstance().setActive(true)
-        } catch {
-            NSLog("Unable to configure background audio session: \(error.localizedDescription)")
-        }
         return true
     }
 
@@ -58,8 +51,5 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 class ViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         bridge?.registerPluginInstance(RestTimerPlugin())
-        if #available(iOS 15.0, *) {
-            bridge?.registerPluginInstance(AppleMusicPlugin())
-        }
     }
 }

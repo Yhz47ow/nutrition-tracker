@@ -4,7 +4,7 @@
   "private": true,
   "description": "Capacitor native shells for the Nutrition and Workout Tracker PWA",
   "scripts": {
-    "test": "node --test tests/workout-core.test.js tests/workout-music.test.js tests/native-app.test.js",
+    "test": "node --test tests/workout-core.test.js tests/native-app.test.js",
     "web:build": "node scripts/build-web.mjs",
     "native:sync": "pnpm run web:build && cap sync",
     "native:open:ios": "cap open ios",

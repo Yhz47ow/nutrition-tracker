@@ -5,19 +5,7 @@
   "backgroundColor": "#0c0f12",
   "server": {
     "androidScheme": "https",
-    "iosScheme": "capacitor",
-    "allowNavigation": [
-      "music.163.com",
-      "*.music.163.com",
-      "music.apple.com",
-      "embed.music.apple.com",
-      "*.music.apple.com",
-      "y.qq.com",
-      "*.y.qq.com",
-      "*.qqmusic.qq.com",
-      "xiaoyuzhoufm.com",
-      "*.xiaoyuzhoufm.com"
-    ]
+    "iosScheme": "capacitor"
   },
   "plugins": {
     "SplashScreen": {

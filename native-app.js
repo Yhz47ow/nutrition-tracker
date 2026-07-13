@@ -38,11 +38,6 @@
   }
 
   function closeTopLayer(){
-    const musicSettings = document.getElementById('workoutMusicSettings');
-    if(musicSettings?.classList.contains('show')){
-      musicSettings.classList.remove('show');
-      return true;
-    }
     const modal = [...document.querySelectorAll('.workout-modal-overlay.show,.modal-overlay.show')].pop();
     if(modal){ modal.classList.remove('show'); return true; }
     const rest = document.getElementById('workoutRestOverlay');
