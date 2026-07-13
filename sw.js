@@ -1,11 +1,14 @@
 /* 营养追踪 — Service Worker */
-const CACHE_NAME = 'nutrition-tracker-v4';
+const CACHE_NAME = 'nutrition-tracker-v5';
 const urlsToCache = [
   './',
   'index.html',
-  'workout.css?v=1.2.1',
-  'workout-core.js?v=1.2.1',
-  'workout.js?v=1.2.1',
+  'workout.css?v=1.3.0',
+  'workout-music.css?v=1.3.0',
+  'workout-core.js?v=1.3.0',
+  'workout.js?v=1.3.0',
+  'workout-music-core.js?v=1.3.0',
+  'workout-music.js?v=1.3.0',
   'manifest.json',
   'icon-192.png',
   'icon-512.png',
@@ -73,6 +76,10 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
+  const requestUrl = new URL(event.request.url);
+  const isAppRequest = requestUrl.origin === self.location.origin;
+  const isSupportedApi = event.request.url.includes('openfoodfacts.org') || event.request.url.includes('api.github.com');
+  if (!isAppRequest && !isSupportedApi) return;
 
   // Navigations use network first so a newly released app shell is not pinned
   // behind the previous version's cached index.html.
@@ -92,7 +99,7 @@ self.addEventListener('fetch', event => {
   }
 
   // Network first for API calls, cache first for static assets
-  if (event.request.url.includes('openfoodfacts.org') || event.request.url.includes('api.github.com')) {
+  if (isSupportedApi) {
     // API: network with cache fallback
     event.respondWith(
       fetch(event.request)

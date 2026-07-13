@@ -14,6 +14,7 @@
 | 🏋️ 力量训练 | 预设六大肌群动作、自定义动作、多动作与多组记录 |
 | ⏱️ 组间休息 | 环形倒计时、暂停、跳过、+10 秒、声音和震动提醒 |
 | 📈 训练趋势 | 月历查看训练日，回顾每组重量/次数与近期趋势 |
+| 🎵 训练音乐 | 常驻控制条、平台嵌入、本地播放列表、Media Session 和离线白噪音 |
 | 📱 PWA 支持 | 添加到 iPhone 主屏幕后像原生 App 一样使用 |
 
 ## 🚀 在 iPhone 上使用
@@ -86,6 +87,17 @@
 - 「动作库」可搜索预设动作，也可新增、编辑和删除自定义动作。
 - 「历史」使用月历查看训练详情，点击「查看趋势」回顾近期表现。
 
+### 训练音乐
+
+- 在训练页点击 `♫`，或在训练中的音乐条点击设置按钮，选择音乐平台。
+- 网易云音乐支持单曲/歌单 ID 或链接；Apple Music 使用专辑/歌单链接；QQ音乐和小宇宙使用 Web 链接。
+- 外部平台在训练页内展开官方播放器。受浏览器同源策略限制，统一按钮不能代替跨域 iframe 切歌或调音量，需要使用展开后的平台控件。
+- 本地音频可输入多行 `歌名 | 艺术家 | 音频URL`，也可选择手机上的音频文件；统一控制条完整支持上一首、播放/暂停、下一首和独立音量。
+- 白、粉红、棕色噪音由浏览器实时生成，可完全离线使用。
+- 本地音频和白噪音接入 Media Session，可响应支持的锁屏媒体控件和耳机按键。
+
+完整平台能力和限制见 [`MUSIC_INTEGRATION.md`](MUSIC_INTEGRATION.md)。
+
 ## 后台倒计时说明
 
 倒计时以持久化的 `endAt` 时间戳为准，不依赖 `setInterval` 累加。页面切到后台或设备锁屏后，回到前台会按当前时间立即校准，因此显示不会产生累计偏差。
@@ -108,8 +120,9 @@ Web 版本会在用户授权后，通过 Service Worker 尝试发送本地 Web N
 - `nutrition_custom_exercises_v1`
 - `nutrition_active_workout_v1`
 - `nutrition_rest_timer_v1`
+- `nutrition_workout_music_v1`
 
-无训练数据的旧用户会得到空数组，不会重写饮食记录。导出文件和 GitHub Gist 格式升级为版本 3，仍能导入旧版仅含饮食数据的文件。
+无训练数据的旧用户会得到空数组，不会重写饮食记录。导出文件和 GitHub Gist 格式升级为版本 4，仍能导入旧版仅含饮食数据的文件。音乐设置也会随本地导出和 Gist 同步，但本机临时音频文件本身不会上传。
 
 可选 Node 后端启动时执行 `CREATE TABLE IF NOT EXISTS` 迁移，新增 `workout_records`、`workout_exercises`、`workout_sets`、`custom_exercises`，迁移版本记录在 `schema_migrations`。现有 `users`、`food_records`、`custom_foods`、`targets` 不变。
 
@@ -129,6 +142,10 @@ nutrition-tracker/
 ├── workout-core.js  # 训练数据、迁移与时间戳计时核心
 ├── workout.js       # 动作库、训练、历史与通知交互
 ├── workout.css      # 训练模块样式
+├── workout-music-core.js # 音乐平台 URL 与播放列表核心
+├── workout-music.js # 音乐控制、嵌入、Media Session 与白噪音
+├── workout-music.css # 训练音乐控制条样式
+├── MUSIC_INTEGRATION.md # 平台可行性报告
 ├── manifest.json    # PWA 配置文件
 ├── sw.js            # 离线缓存与训练通知
 ├── server/          # 可选 Node.js + sql.js 同步服务
@@ -151,7 +168,7 @@ python3 -m http.server 8080
 训练核心测试需要 Node.js 18 或更高版本：
 
 ```bash
-node --test tests/workout-core.test.js
+node --test tests/workout-core.test.js tests/workout-music.test.js
 ```
 
 可选后端：
