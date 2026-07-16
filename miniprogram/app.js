@@ -7,6 +7,7 @@ App({
     pendingMeal: 'lunch',
     pendingDate: '',
     editFoodId: '',
+    editMealTemplateId: '',
     editExerciseId: '',
     systemTheme: 'dark',
     resolvedTheme: 'dark',

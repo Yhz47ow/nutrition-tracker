@@ -1,6 +1,6 @@
 {
   "name": "nutrition-tracker-mobile",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "private": true,
   "description": "Nutrition and workout tracker for PWA, native apps and WeChat Mini Program",
   "scripts": {

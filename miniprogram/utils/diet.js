@@ -1,6 +1,7 @@
 'use strict';
 
 const foods = require('./foods');
+const foodLibrary = require('./food-library');
 const dates = require('./date');
 
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'];
@@ -35,12 +36,14 @@ function calcMacros(food, grams) {
     protein: round(food.proteinPer100g * ratio),
     carbs: round(food.carbsPer100g * ratio),
     fat: round(food.fatPer100g * ratio),
+    fiber: round((food.fiberPer100g || 0) * ratio),
+    sodium: round((food.sodiumPer100g || 0) * ratio),
     grams: amount,
   };
 }
 
 function allFoods(customFoods) {
-  return foods.concat(Array.isArray(customFoods) ? customFoods : []);
+  return foodLibrary.allFoods(customFoods);
 }
 
 function mealSummary(type, items) {
@@ -49,8 +52,10 @@ function mealSummary(type, items) {
     sum.protein += Number(item.protein) || 0;
     sum.carbs += Number(item.carbs) || 0;
     sum.fat += Number(item.fat) || 0;
+    sum.fiber += Number(item.fiber) || 0;
+    sum.sodium += Number(item.sodium) || 0;
     return sum;
-  }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+  }, { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sodium: 0 });
   const macroTotal = totals.protein + totals.carbs + totals.fat;
   return {
     type,
@@ -61,6 +66,8 @@ function mealSummary(type, items) {
     protein: round(totals.protein),
     carbs: round(totals.carbs),
     fat: round(totals.fat),
+    fiber: round(totals.fiber),
+    sodium: round(totals.sodium),
     proteinPct: macroTotal ? Math.round(totals.protein / macroTotal * 100) : 0,
     carbsPct: macroTotal ? Math.round(totals.carbs / macroTotal * 100) : 0,
     fatPct: macroTotal ? Math.round(totals.fat / macroTotal * 100) : 0,
@@ -174,25 +181,10 @@ function createRecord(food, grams, mealType, photo) {
     mealType,
     time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
     photo: photo || '',
+    category: food.category || 'other',
+    fiberPer100g: Number(food.fiberPer100g) || 0,
+    sodiumPer100g: Number(food.sodiumPer100g) || 0,
   }, macros);
-}
-
-function parseProduct(product, fallbackId) {
-  const nutriments = product && product.nutriments || {};
-  const name = product && (product.product_name_zh || product.product_name || product.generic_name_zh || product.generic_name);
-  if (!name) return null;
-  const calories = Number(nutriments['energy-kcal_100g'] || (Number(nutriments.energy_100g) / 4.184) || 0);
-  if (!calories && !nutriments.proteins_100g && !nutriments.carbohydrates_100g && !nutriments.fat_100g) return null;
-  return {
-    id: `api-${product.code || fallbackId || Date.now()}`,
-    name: String(name).trim(),
-    caloriesPer100g: round(calories),
-    proteinPer100g: round(nutriments.proteins_100g),
-    carbsPer100g: round(nutriments.carbohydrates_100g),
-    fatPer100g: round(nutriments.fat_100g),
-    servingSize: 100,
-    source: 'api',
-  };
 }
 
 module.exports = {
@@ -208,5 +200,4 @@ module.exports = {
   recommendations,
   recommendedAmount,
   createRecord,
-  parseProduct,
 };

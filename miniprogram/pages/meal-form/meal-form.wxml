@@ -1,0 +1,9 @@
+<view class="page {{themeClass}}">
+  <view class="field"><text class="field-label">套餐名称 *</text><input class="input" value="{{name}}" bindinput="inputName" placeholder="例如：我的早餐套餐"/></view>
+  <view class="section-title">添加组成食物</view><input class="input" value="{{query}}" bindinput="inputQuery" placeholder="搜索名称或拼音首字母"/>
+  <view class="search-results" wx:if="{{matches.length}}"><view class="list-row" wx:for="{{matches}}" wx:key="id" data-index="{{index}}" bindtap="addFood"><view class="grow"><view class="strong">{{item.name}}</view><view class="small muted">{{item.categoryLabel}} · 每份{{item.servingSize}}g</view></view><text class="add-mark">＋</text></view></view>
+  <view class="section-title component-title">套餐内容</view><view class="empty" wx:if="{{!components.length}}">搜索并添加食物</view>
+  <view class="card component-list" wx:else><view class="component-row" wx:for="{{components}}" wx:key="index"><view class="grow"><view class="strong">{{item.food.name}}</view><view class="small muted">{{item.food.categoryLabel}}</view></view><input class="grams-input" type="digit" value="{{item.grams}}" data-index="{{index}}" bindinput="inputGrams"/><text class="muted">g</text><button class="btn-icon btn-small btn-danger" data-index="{{index}}" bindtap="removeFood">删</button></view></view>
+  <view class="card total-card" wx:if="{{totals}}"><view><text class="muted">总重量</text><text class="strong">{{totals.grams}}g</text></view><view><text class="muted">热量</text><text class="strong">{{totals.calories}}kcal</text></view><view><text class="muted">蛋白</text><text class="strong">{{totals.protein}}g</text></view><view><text class="muted">碳水</text><text class="strong">{{totals.carbs}}g</text></view></view>
+  <button class="btn btn-primary save" bindtap="save">保存套餐</button>
+</view>

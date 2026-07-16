@@ -6,6 +6,8 @@ const KEYS = Object.freeze({
   schemaVersion: 'localSchemaVersion',
   dietRecords: 'dietRecords',
   customFoods: 'customFoods',
+  mealTemplates: 'mealTemplates',
+  favoriteFoods: 'favoriteFoods',
   userSettings: 'userSettings',
   workoutHistory: 'workoutHistory',
   exerciseLibrary: 'exerciseLibrary',
@@ -46,6 +48,8 @@ function initialize() {
   if (!version) {
     write(KEYS.dietRecords, {});
     write(KEYS.customFoods, []);
+    write(KEYS.mealTemplates, []);
+    write(KEYS.favoriteFoods, []);
     write(KEYS.userSettings, clone(DEFAULT_SETTINGS));
     write(KEYS.workoutHistory, []);
     write(KEYS.exerciseLibrary, []);
@@ -59,13 +63,21 @@ function initialize() {
     ? (settings.theme === 'dark' ? 'dark' : 'system')
     : (['system', 'dark', 'light'].includes(settings.theme) ? settings.theme : 'system');
   write(KEYS.userSettings, settings);
-  write(KEYS.schemaVersion, 3);
+  if (version < 4) {
+    const mealTemplates = read(KEYS.mealTemplates, []);
+    const favoriteFoods = read(KEYS.favoriteFoods, []);
+    write(KEYS.mealTemplates, Array.isArray(mealTemplates) ? mealTemplates : []);
+    write(KEYS.favoriteFoods, Array.isArray(favoriteFoods) ? favoriteFoods : []);
+  }
+  write(KEYS.schemaVersion, 4);
 }
 
 function getDietState() {
   return {
     records: read(KEYS.dietRecords, {}),
     customFoods: read(KEYS.customFoods, []),
+    mealTemplates: read(KEYS.mealTemplates, []),
+    favoriteFoods: read(KEYS.favoriteFoods, []),
     settings: read(KEYS.userSettings, DEFAULT_SETTINGS),
   };
 }
@@ -73,6 +85,8 @@ function getDietState() {
 function saveDietState(state) {
   write(KEYS.dietRecords, state.records || {});
   write(KEYS.customFoods, state.customFoods || []);
+  write(KEYS.mealTemplates, state.mealTemplates || []);
+  write(KEYS.favoriteFoods, state.favoriteFoods || []);
   if (state.settings) write(KEYS.userSettings, state.settings);
 }
 
@@ -119,11 +133,13 @@ function createBackup() {
   const diet = getDietState();
   const workout = getWorkoutState();
   return {
-    version: 5,
+    version: 6,
     platform: 'wechat-mini-program',
     exportedAt: new Date().toISOString(),
     dietRecords: diet.records,
     customFoods: diet.customFoods,
+    mealTemplates: diet.mealTemplates,
+    favoriteFoods: diet.favoriteFoods,
     userSettings: diet.settings,
     workoutHistory: workout.workouts,
     exerciseLibrary: workout.customExercises,
@@ -149,6 +165,8 @@ function importBackup(payload) {
   saveDietState({
     records: mergeRecords(currentDiet.records, incomingRecords),
     customFoods: mergeById(currentDiet.customFoods, payload.customFoods || []),
+    mealTemplates: mergeById(currentDiet.mealTemplates, payload.mealTemplates || []),
+    favoriteFoods: Array.from(new Set((currentDiet.favoriteFoods || []).concat(payload.favoriteFoods || []).map(String))),
     settings,
   });
   saveWorkoutState({

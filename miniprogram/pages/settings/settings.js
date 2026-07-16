@@ -110,7 +110,7 @@ Page({
   clearAll() {
     wx.showModal({
       title: '清除全部本地数据',
-      content: '将删除饮食、训练、自定义食物、照片和设置，且无法撤销。建议先导出备份。',
+      content: '将删除饮食、训练、自定义食物、套餐、收藏、照片和设置，且无法撤销。建议先导出备份。',
       confirmText: '全部删除',
       confirmColor: theme.palette().danger,
       success: result => {

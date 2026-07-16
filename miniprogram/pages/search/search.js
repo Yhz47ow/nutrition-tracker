@@ -1,55 +1,33 @@
 const storage = require('../../utils/storage');
 const diet = require('../../utils/diet');
+const foodLibrary = require('../../utils/food-library');
+const templates = require('../../utils/meal-templates');
+const dates = require('../../utils/date');
 const theme = require('../../utils/theme');
 
 Page({
-  data: { themeClass:'', tab:'local', query:'', results:[], loading:false, pendingMeal:'lunch' },
-
-  onShow() {
-    this.setData({ themeClass: theme.apply(), pendingMeal: getApp().globalData.pendingMeal || 'lunch' });
-    this.refreshLocal();
+  data:{themeClass:'',tab:'local',query:'',results:[],mealTemplates:[],categories:[{key:'all',label:'全部'}].concat(foodLibrary.categories),category:'all',pendingMeal:'lunch',favoriteFoods:[]},
+  onShow(){this.setData({themeClass:theme.apply(),pendingMeal:getApp().globalData.pendingMeal||'lunch'});this.refresh();},
+  refresh(){
+    const state=storage.getDietState();
+    const favoriteSet=new Set((state.favoriteFoods||[]).map(String));
+    let pool=this.data.tab==='custom'?state.customFoods:foodLibrary.allFoods(state.customFoods);
+    if(this.data.tab==='favorite')pool=pool.filter(item=>favoriteSet.has(String(item.id)));
+    const results=foodLibrary.filterFoods(pool,this.data.query,this.data.category).map(item=>Object.assign({},item,{favorite:favoriteSet.has(String(item.id))}));
+    const mealTemplates=(state.mealTemplates||[]).filter(item=>!this.data.query||item.name.includes(this.data.query));
+    this.setData({results,mealTemplates,favoriteFoods:state.favoriteFoods||[]});
   },
-
-  refreshLocal() {
-    const state = storage.getDietState();
-    const pool = this.data.tab === 'custom' ? state.customFoods : diet.allFoods(state.customFoods);
-    const query = this.data.query.trim().toLowerCase();
-    this.setData({ results: query ? pool.filter(item => item.name.toLowerCase().includes(query)) : pool });
+  switchTab(event){this.setData({tab:event.currentTarget.dataset.tab},()=>this.refresh());},
+  inputQuery(event){this.setData({query:event.detail.value},()=>this.refresh());},
+  setCategory(event){this.setData({category:event.currentTarget.dataset.category},()=>this.refresh());},
+  selectFood(event){const food=this.data.results[Number(event.currentTarget.dataset.index)];if(!food)return;getApp().globalData.pendingFood=food;wx.navigateTo({url:'/pages/food-entry/food-entry'});},
+  toggleFavorite(event){const id=event.currentTarget.dataset.id;const state=storage.getDietState();state.favoriteFoods=foodLibrary.toggleFavorite(state.favoriteFoods,id);storage.saveDietState(state);this.refresh();},
+  recordTemplate(event){
+    const item=this.data.mealTemplates.find(template=>template.id===event.currentTarget.dataset.id);if(!item)return;
+    const state=storage.getDietState();const date=getApp().globalData.pendingDate||dates.dateKey(Date.now());const meal=this.data.pendingMeal;
+    const meals=diet.normalizeRecords(state.records,date);meals[meal].push(...templates.createRecords(item,meal));state.records[date]=meals;storage.saveDietState(state);
+    wx.showToast({title:`已记录${item.components.length}项`,icon:'success'});
   },
-
-  switchTab(event) {
-    const tab = event.currentTarget.dataset.tab;
-    this.setData({ tab, results: tab === 'online' ? [] : this.data.results }, () => {
-      if (tab !== 'online') this.refreshLocal();
-    });
-  },
-
-  inputQuery(event) { this.setData({ query: event.detail.value }, () => { if (this.data.tab !== 'online') this.refreshLocal(); }); },
-
-  search() {
-    if (this.data.tab !== 'online') return this.refreshLocal();
-    const query = this.data.query.trim();
-    if (!query) return wx.showToast({ title:'请输入食物名称', icon:'none' });
-    this.setData({ loading:true, results:[] });
-    wx.request({
-      url:'https://world.openfoodfacts.org/cgi/search.pl',
-      data:{ search_terms:query, search_simple:1, action:'process', json:1, page_size:30 },
-      success: response => {
-        const results = (response.data && response.data.products || []).map((item, index) => diet.parseProduct(item, index)).filter(Boolean);
-        this.setData({ results });
-      },
-      fail: () => wx.showModal({ title:'联网搜索不可用', content:'请检查网络，或先使用内置食物和自定义食物。', showCancel:false }),
-      complete: () => this.setData({ loading:false }),
-    });
-  },
-
-  selectFood(event) {
-    const food = this.data.results[Number(event.currentTarget.dataset.index)];
-    if (!food) return;
-    const app = getApp();
-    app.globalData.pendingFood = food;
-    wx.navigateTo({ url:'/pages/food-entry/food-entry' });
-  },
-
-  newCustom() { getApp().globalData.editFoodId=''; wx.navigateTo({ url:'/pages/custom-food/custom-food' }); },
+  newCustom(){getApp().globalData.editFoodId='';wx.navigateTo({url:'/pages/custom-food/custom-food'});},
+  newTemplate(){getApp().globalData.editMealTemplateId='';wx.navigateTo({url:'/pages/meal-form/meal-form'});},
 });

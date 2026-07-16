@@ -20,6 +20,8 @@ test('initialization creates plain local storage collections', () => {
   assert.deepEqual(wx.getStorageSync('dietRecords'), {});
   assert.deepEqual(wx.getStorageSync('workoutHistory'), []);
   assert.deepEqual(wx.getStorageSync('exerciseLibrary'), []);
+  assert.deepEqual(wx.getStorageSync('mealTemplates'), []);
+  assert.deepEqual(wx.getStorageSync('favoriteFoods'), []);
   assert.equal(wx.getStorageSync('userSettings').targets.protein, 120);
   assert.equal(wx.getStorageSync('userSettings').theme, 'system');
   assert.deepEqual(wx.getStorageSync('userSettings').profile, {sex:'',age:'',heightCm:'',weightKg:''});
@@ -49,7 +51,9 @@ test('version one default theme migrates to follow system', () => {
   wx.setStorageSync('userSettings', {targets:{calories:1800},theme:'light'});
   const storage = require('../../miniprogram/utils/storage');
   storage.initialize();
-  assert.equal(wx.getStorageSync('localSchemaVersion'), 3);
+  assert.equal(wx.getStorageSync('localSchemaVersion'), 4);
+  assert.deepEqual(wx.getStorageSync('mealTemplates'), []);
+  assert.deepEqual(wx.getStorageSync('favoriteFoods'), []);
   assert.equal(wx.getStorageSync('userSettings').theme, 'system');
   assert.equal(wx.getStorageSync('userSettings').targets.calories, 1800);
 });
@@ -69,6 +73,8 @@ test('legacy PWA backup imports without replacing current records', () => {
     targets: {calories: 2000},
     workouts: [{id:'workout-1',date:'2026-07-15'}],
     customExercises: [{id:'exercise-1',name:'测试动作'}],
+    mealTemplates: [{id:'meal-1',name:'早餐套餐',components:[]}],
+    favoriteFoods: ['b-rice'],
   });
   const backup = storage.createBackup();
   assert.equal(backup.dietRecords['2026-07-15'].breakfast.length, 2);
@@ -76,4 +82,6 @@ test('legacy PWA backup imports without replacing current records', () => {
   assert.equal(backup.userSettings.targets.calories, 2000);
   assert.equal(backup.workoutHistory[0].id, 'workout-1');
   assert.equal(backup.exerciseLibrary[0].id, 'exercise-1');
+  assert.equal(backup.mealTemplates[0].id, 'meal-1');
+  assert.deepEqual(backup.favoriteFoods, ['b-rice']);
 });

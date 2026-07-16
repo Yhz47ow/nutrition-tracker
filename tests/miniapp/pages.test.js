@@ -6,7 +6,7 @@ const path = require('node:path');
 
 function createRuntime() {
   const values = new Map();
-  const app = { globalData: { pendingFood:null, pendingMeal:'lunch', pendingDate:'', editFoodId:'', editExerciseId:'', systemTheme:'dark', resolvedTheme:'dark' } };
+  const app = { globalData: { pendingFood:null, pendingMeal:'lunch', pendingDate:'', editFoodId:'', editMealTemplateId:'', editExerciseId:'', systemTheme:'dark', resolvedTheme:'dark' } };
   global.wx = {
     env: { USER_DATA_PATH:'/tmp' },
     getStorageSync(key) { return values.has(key) ? values.get(key) : ''; },
@@ -68,7 +68,7 @@ test('all mini program pages initialize with local data only', () => {
   }
 
   runtime.app.globalData.pendingFood = require('../../miniprogram/utils/foods')[0];
-  for (const name of ['food-entry','custom-food','exercise-form','training']) {
+  for (const name of ['food-entry','custom-food','meal-form','exercise-form','training']) {
     const page = loadPage(name);
     page.onLoad();
     assert.ok(page.data, `${name} initialized`);
