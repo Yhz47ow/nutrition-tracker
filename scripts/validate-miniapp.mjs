@@ -37,6 +37,9 @@ for (const file of files.filter(file => /\.(?:js|json|wxml|wxss)$/.test(file))) 
 
 for (const file of files.filter(file => file.endsWith('.wxml'))) {
   const source = fs.readFileSync(file, 'utf8');
+  if (!/^\s*<view\s+class="page \{\{themeClass\}\}/.test(source)) {
+    failures.push(`${path.relative(root, file)} 根节点未应用全局主题类`);
+  }
   if ((source.match(/\{\{/g) || []).length !== (source.match(/\}\}/g) || []).length) {
     failures.push(`${path.relative(root, file)} 数据绑定括号不平衡`);
   }
@@ -59,7 +62,19 @@ for (const file of files.filter(file => file.endsWith('.wxml'))) {
   if (result.status !== 0) failures.push(`${path.relative(root, file)} 标签结构无效: ${result.stderr.trim().split('\n').at(-1)}`);
 }
 
-for (const required of ['assets/rest-finished.wav', 'utils/foods.js', 'utils/workout-core.js']) {
+const appStyles = fs.readFileSync(path.join(mini, 'app.wxss'), 'utf8');
+for (const variable of ['--bg-primary','--bg-secondary','--bg-tertiary','--bg-sidebar','--text-primary','--text-secondary','--text-tertiary','--separator','--accent']) {
+  if (!appStyles.includes(variable)) failures.push(`app.wxss 缺少主题变量: ${variable}`);
+}
+
+for (const file of files.filter(file => /pages\/.+\.(?:js|wxml|wxss)$/.test(file))) {
+  const source = fs.readFileSync(file, 'utf8');
+  if (/(?:#[0-9a-f]{3,8}|rgba?\()/i.test(source)) {
+    failures.push(`${path.relative(root, file)} 包含页面级硬编码颜色，请改用全局主题变量或 theme.palette()`);
+  }
+}
+
+for (const required of ['assets/rest-finished.wav', 'utils/foods.js', 'utils/workout-core.js', 'utils/data-io.js']) {
   if (!fs.existsSync(path.join(mini, required))) failures.push(`缺少资源: ${required}`);
 }
 

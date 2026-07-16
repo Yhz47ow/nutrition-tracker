@@ -21,6 +21,36 @@ test('initialization creates plain local storage collections', () => {
   assert.deepEqual(wx.getStorageSync('workoutHistory'), []);
   assert.deepEqual(wx.getStorageSync('exerciseLibrary'), []);
   assert.equal(wx.getStorageSync('userSettings').targets.protein, 120);
+  assert.equal(wx.getStorageSync('userSettings').theme, 'system');
+});
+
+test('theme preference supports system, dark and light modes', () => {
+  global.wx = Object.assign(createWxMock(), {
+    getSystemInfoSync() { return { theme:'dark' }; },
+    setNavigationBarColor() {},
+    setBackgroundColor() {},
+    setTabBarStyle() {},
+  });
+  global.getApp = () => ({ globalData:{ systemTheme:'dark' } });
+  const storage = require('../../miniprogram/utils/storage');
+  const theme = require('../../miniprogram/utils/theme');
+  storage.initialize();
+  assert.equal(theme.current(), 'dark');
+  const state = storage.getDietState();
+  state.settings.theme = 'light';
+  storage.saveDietState(state);
+  assert.equal(theme.apply(), 'light-theme');
+});
+
+test('version one default theme migrates to follow system', () => {
+  global.wx = createWxMock();
+  wx.setStorageSync('localSchemaVersion', 1);
+  wx.setStorageSync('userSettings', {targets:{calories:1800},theme:'light'});
+  const storage = require('../../miniprogram/utils/storage');
+  storage.initialize();
+  assert.equal(wx.getStorageSync('localSchemaVersion'), 2);
+  assert.equal(wx.getStorageSync('userSettings').theme, 'system');
+  assert.equal(wx.getStorageSync('userSettings').targets.calories, 1800);
 });
 
 test('legacy PWA backup imports without replacing current records', () => {

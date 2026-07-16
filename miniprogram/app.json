@@ -12,17 +12,17 @@
     "pages/settings/settings"
   ],
   "window": {
-    "navigationBarBackgroundColor": "#2f855a",
+    "navigationBarBackgroundColor": "#1E1E1E",
     "navigationBarTextStyle": "white",
-    "navigationBarTitleText": "营养与训练追踪",
-    "backgroundColor": "#f4f6f8",
+    "navigationBarTitleText": "食练记",
+    "backgroundColor": "#1E1E1E",
     "backgroundTextStyle": "dark"
   },
   "tabBar": {
-    "color": "#768078",
-    "selectedColor": "#2f855a",
-    "backgroundColor": "#ffffff",
-    "borderStyle": "black",
+    "color": "#99999F",
+    "selectedColor": "#FF9F0A",
+    "backgroundColor": "#1A1A1A",
+    "borderStyle": "white",
     "list": [
       {"pagePath": "pages/home/home", "text": "首页"},
       {"pagePath": "pages/search/search", "text": "搜索"},

@@ -1,1 +1,32 @@
-<view class="page {{themeClass}}"><view class="section"><view class="section-title">每日营养目标</view><view class="form-grid"><view class="field"><text class="field-label">热量 kcal</text><input class="input" type="digit" value="{{targets.calories}}" data-field="calories" bindinput="inputTarget"/></view><view class="field"><text class="field-label">碳水 g</text><input class="input" type="digit" value="{{targets.carbs}}" data-field="carbs" bindinput="inputTarget"/></view><view class="field"><text class="field-label">蛋白质 g</text><input class="input" type="digit" value="{{targets.protein}}" data-field="protein" bindinput="inputTarget"/></view><view class="field"><text class="field-label">脂肪 g</text><input class="input" type="digit" value="{{targets.fat}}" data-field="fat" bindinput="inputTarget"/></view></view><view class="preset-row"><button class="btn btn-small btn-secondary" data-mode="fatloss" bindtap="preset">减脂比例</button><button class="btn btn-small btn-secondary" data-mode="balanced" bindtap="preset">均衡比例</button></view></view><view class="card theme-row"><view class="grow"><view class="strong">深色模式</view><view class="small muted">训练页面始终使用深色界面</view></view><switch color="#2f855a" checked="{{theme==='dark'}}" bindchange="changeTheme"/></view><button class="btn btn-primary save" bindtap="save">保存设置</button><view class="section backup"><view class="section-title">本地备份</view><view class="toast-note">所有记录只保存在当前微信设备。更换手机、清理微信数据或删除小程序前，请先导出备份文件。</view><button class="btn btn-secondary" bindtap="exportBackup">导出 JSON 备份</button><button class="btn btn-secondary" bindtap="importBackup">从聊天文件导入</button></view><view class="section"><view class="section-title">数据管理</view><button class="btn btn-danger" bindtap="clearAll">清除全部本地数据</button></view></view>
+<view class="page {{themeClass}}">
+  <view class="section">
+    <view class="section-title">每日营养目标</view>
+    <view class="form-grid">
+      <view class="field"><text class="field-label">热量 kcal</text><input class="input" type="digit" value="{{targets.calories}}" data-field="calories" bindinput="inputTarget"/></view>
+      <view class="field"><text class="field-label">碳水 g</text><input class="input" type="digit" value="{{targets.carbs}}" data-field="carbs" bindinput="inputTarget"/></view>
+      <view class="field"><text class="field-label">蛋白质 g</text><input class="input" type="digit" value="{{targets.protein}}" data-field="protein" bindinput="inputTarget"/></view>
+      <view class="field"><text class="field-label">脂肪 g</text><input class="input" type="digit" value="{{targets.fat}}" data-field="fat" bindinput="inputTarget"/></view>
+    </view>
+    <view class="preset-row"><button class="btn btn-small btn-secondary" data-mode="fatloss" bindtap="preset">减脂比例</button><button class="btn btn-small btn-secondary" data-mode="balanced" bindtap="preset">均衡比例</button></view>
+  </view>
+
+  <view class="section">
+    <view class="section-title">外观</view>
+    <view class="segments theme-options"><view class="segment {{theme===item.value?'active':''}}" wx:for="{{themeOptions}}" wx:key="value" data-theme="{{item.value}}" bindtap="selectTheme">{{item.label}}</view></view>
+    <view class="small muted">默认跟随微信和手机系统外观，切换后立即生效。</view>
+  </view>
+
+  <button class="btn btn-primary save" bindtap="save">保存营养目标</button>
+
+  <view class="section backup">
+    <view class="section-title">本地备份</view>
+    <view class="toast-note">数据仅保存在当前微信设备。换手机前请将 JSON 备份发送到文件传输助手。</view>
+    <button class="btn btn-secondary" bindtap="exportBackup">发送备份到微信聊天</button>
+    <button class="btn btn-secondary" bindtap="importBackup">从聊天文件恢复</button>
+  </view>
+
+  <view class="section">
+    <view class="section-title">数据管理</view>
+    <button class="btn btn-danger" bindtap="clearAll">清除全部本地数据</button>
+  </view>
+</view>

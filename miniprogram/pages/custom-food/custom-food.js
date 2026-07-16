@@ -2,6 +2,7 @@ const storage=require('../../utils/storage');const diet=require('../../utils/die
 Page({
   data:{themeClass:'',editId:'',form:{name:'',unit:'克',caloriesPer100g:'',carbsPer100g:'',proteinPer100g:'',fatPer100g:'',servingSize:100},actualAmount:'',actualResult:null},
   onLoad(){const id=getApp().globalData.editFoodId||'';const state=storage.getDietState();const food=state.customFoods.find(item=>item.id===id);this.setData({themeClass:theme.apply(),editId:id,form:food?Object.assign({},food):this.data.form});},
+  onShow(){this.setData({themeClass:theme.apply()});},
   inputField(event){this.setData({[`form.${event.currentTarget.dataset.field}`]:event.detail.value},()=>this.calculateActual());},
   inputActual(event){this.setData({actualAmount:event.detail.value},()=>this.calculateActual());},
   calculateActual(){const amount=Number(this.data.actualAmount);if(!amount)return this.setData({actualResult:null});const food={caloriesPer100g:Number(this.data.form.caloriesPer100g)||0,carbsPer100g:Number(this.data.form.carbsPer100g)||0,proteinPer100g:Number(this.data.form.proteinPer100g)||0,fatPer100g:Number(this.data.form.fatPer100g)||0};this.setData({actualResult:diet.calcMacros(food,amount)});},

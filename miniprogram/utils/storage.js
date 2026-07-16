@@ -13,7 +13,7 @@ const KEYS = Object.freeze({
 
 const DEFAULT_SETTINGS = Object.freeze({
   targets: { calories: 1600, carbs: 160, protein: 120, fat: 44 },
-  theme: 'light',
+  theme: 'system',
 });
 
 function clone(value) {
@@ -39,18 +39,23 @@ function remove(key) {
 }
 
 function initialize() {
-  if (!read(KEYS.schemaVersion, 0)) {
+  let version = read(KEYS.schemaVersion, 0);
+  if (!version) {
     write(KEYS.dietRecords, {});
     write(KEYS.customFoods, []);
     write(KEYS.userSettings, clone(DEFAULT_SETTINGS));
     write(KEYS.workoutHistory, []);
     write(KEYS.exerciseLibrary, []);
     write(KEYS.schemaVersion, 1);
+    version = 1;
   }
   const settings = read(KEYS.userSettings, DEFAULT_SETTINGS);
   settings.targets = Object.assign({}, DEFAULT_SETTINGS.targets, settings.targets || {});
-  settings.theme = settings.theme === 'dark' ? 'dark' : 'light';
+  settings.theme = version < 2
+    ? (settings.theme === 'dark' ? 'dark' : 'system')
+    : (['system', 'dark', 'light'].includes(settings.theme) ? settings.theme : 'system');
   write(KEYS.userSettings, settings);
+  write(KEYS.schemaVersion, 2);
 }
 
 function getDietState() {

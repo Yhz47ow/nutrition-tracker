@@ -2,6 +2,7 @@ const storage=require('../../utils/storage');const diet=require('../../utils/die
 Page({
   data:{themeClass:'',food:null,date:'',meal:'lunch',grams:100,macros:null,photo:'',recommendation:null,mealOptions:diet.MEAL_TYPES.map(type=>({type,name:diet.MEAL_META[type].name}))},
   onLoad(){const app=getApp();const food=app.globalData.pendingFood;if(!food){wx.showModal({title:'没有选择食物',content:'请返回搜索页面重新选择。',showCancel:false,success:()=>wx.navigateBack()});return;}const date=app.globalData.pendingDate||dates.dateKey(Date.now());const meal=app.globalData.pendingMeal||'lunch';const grams=Number(food.servingSize)||100;const state=storage.getDietState();const summary=diet.summarize(state.records,date,state.settings.targets);this.setData({themeClass:theme.apply(),food,date,meal,grams,macros:diet.calcMacros(food,grams),recommendation:diet.recommendedAmount(food,summary)});},
+  onShow(){this.setData({themeClass:theme.apply()});},
   inputGrams(event){const grams=Math.max(1,Number(event.detail.value)||1);this.setData({grams,macros:diet.calcMacros(this.data.food,grams)});},
   adjustGrams(event){const grams=Math.max(1,Number(this.data.grams)+Number(event.currentTarget.dataset.delta));this.setData({grams,macros:diet.calcMacros(this.data.food,grams)});},
   useRecommendation(){if(this.data.recommendation&&this.data.recommendation.grams)this.setData({grams:this.data.recommendation.grams,macros:diet.calcMacros(this.data.food,this.data.recommendation.grams)});},
