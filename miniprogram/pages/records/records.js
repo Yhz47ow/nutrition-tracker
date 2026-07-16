@@ -2,7 +2,6 @@ const storage=require('../../utils/storage');const diet=require('../../utils/die
 Page({
   data:{themeClass:'',dates:[],selectedDate:'',summary:null},
   onShow(){this.setData({themeClass:theme.apply()});this.refresh();},
-  openSettings(){wx.navigateTo({url:'/pages/settings/settings'});},
   refresh(){const state=storage.getDietState();const keys=Object.keys(state.records).filter(key=>diet.MEAL_TYPES.some(type=>(state.records[key][type]||[]).length)).sort().reverse();const selectedDate=this.data.selectedDate&&keys.includes(this.data.selectedDate)?this.data.selectedDate:(keys[0]||'');this.setData({dates:keys.map(key=>({key,label:dates.formatDate(key)})),selectedDate,summary:selectedDate?diet.summarize(state.records,selectedDate,state.settings.targets):null});},
   chooseDate(event){this.setData({selectedDate:event.currentTarget.dataset.date},()=>this.refresh());},
   previewPhoto(event){const path=event.currentTarget.dataset.path;if(path)wx.previewImage({current:path,urls:[path]});},

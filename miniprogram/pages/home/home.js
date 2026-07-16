@@ -55,6 +55,8 @@ Page({
     this.setData({ currentDate: dates.dateKey(Date.now()) }, () => this.refresh());
   },
 
+  openSettings() { wx.navigateTo({ url: '/pages/settings/settings' }); },
+
   startWorkout() { wx.navigateTo({ url: '/pages/training/training' }); },
 
   addFood(event) {

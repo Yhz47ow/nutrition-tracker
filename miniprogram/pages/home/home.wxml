@@ -4,6 +4,7 @@
       <view class="eyebrow">营养与训练追踪</view>
       <view class="page-heading">今日概览</view>
     </view>
+    <button class="btn-icon btn-secondary settings" bindtap="openSettings">⚙</button>
   </view>
 
   <view class="date-nav">
