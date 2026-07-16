@@ -1,9 +1,6 @@
 <view class="page {{themeClass}}">
   <view class="field"><text class="field-label">食物名称 *</text><input class="input" value="{{form.name}}" data-field="name" bindinput="inputField" placeholder="例如：自制牛肉饼"/></view>
-  <view class="identity-fields">
-    <view class="field"><text class="field-label">膳食类别 *</text><picker mode="selector" range="{{categories}}" range-key="label" value="{{categoryIndex}}" bindchange="selectCategory"><view class="picker-field">{{categories[categoryIndex].label}}</view></picker></view>
-    <view class="field"><text class="field-label">每份克重 *</text><view class="unit-input"><input class="input" type="digit" value="{{form.servingSize}}" data-field="servingSize" bindinput="inputField" placeholder="100"/><text>g</text></view></view>
-  </view>
+  <view class="field"><text class="field-label">每份克重 *</text><view class="unit-input"><input class="input" type="digit" value="{{form.servingSize}}" data-field="servingSize" bindinput="inputField" placeholder="100"/><text>g</text></view></view>
   <view class="field"><text class="field-label">拼音首字母（可选）</text><input class="input" value="{{form.pinyinInitials}}" data-field="pinyinInitials" bindinput="inputField" placeholder="例如 zznrp"/></view>
   <view class="section-title">每份营养</view>
   <view class="energy-field">
@@ -20,6 +17,6 @@
     <view class="field"><text class="field-label">钠 mg（可选）</text><input class="input" type="digit" value="{{form.sodiumPerServing}}" data-field="sodiumPerServing" bindinput="inputField"/></view>
   </view>
   <view class="card calculator"><view class="section-title">实际摄入试算</view><input class="input" type="digit" value="{{actualAmount}}" bindinput="inputActual" placeholder="输入实际吃了多少克"/><view class="actual" wx:if="{{actualResult}}">{{actualResult.calories}} kcal · 碳{{actualResult.carbs}}g · 蛋{{actualResult.protein}}g · 脂{{actualResult.fat}}g</view></view>
-  <view class="toast-note">保存时会自动换算成每 100g 营养，确保能参与每日汇总和膳食指南分析。</view>
+  <view class="toast-note">保存时会自动换算成每 100g 营养，并参与每日热量和营养素汇总。</view>
   <button class="btn btn-primary save" bindtap="save">保存食物</button>
 </view>

@@ -3,6 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
+const fs = require('node:fs');
 
 function createRuntime() {
   const values = new Map();
@@ -75,4 +76,13 @@ test('all mini program pages initialize with local data only', () => {
     assert.ok(page.data, `${name} initialized`);
     if (page.onUnload) page.onUnload();
   }
+});
+
+test('custom food form keeps category internal instead of asking the user', () => {
+  const source=fs.readFileSync(path.resolve(__dirname,'../../miniprogram/pages/custom-food/custom-food.wxml'),'utf8');
+  assert.equal(source.includes('膳食类别'),false);
+  createRuntime();
+  const page=loadPage('custom-food');
+  page.onLoad();
+  assert.equal(page.data.form.category,'other');
 });

@@ -5,8 +5,8 @@ const theme = require('../../utils/theme');
 
 Page({
   data:{
-    themeClass:'', editId:'', categories:foodLibrary.categories, categoryIndex:0, energyEquivalent:'',
-    form:{name:'',category:'grain',servingSize:100,energyPerServing:'',energyUnit:'kcal',proteinPerServing:'',fatPerServing:'',carbsPerServing:'',fiberPerServing:'',sodiumPerServing:'',pinyinInitials:''},
+    themeClass:'', editId:'', energyEquivalent:'',
+    form:{name:'',category:'other',servingSize:100,energyPerServing:'',energyUnit:'kcal',proteinPerServing:'',fatPerServing:'',carbsPerServing:'',fiberPerServing:'',sodiumPerServing:'',pinyinInitials:''},
     actualAmount:'', actualResult:null,
   },
   onLoad(){
@@ -14,8 +14,7 @@ Page({
     const state=storage.getDietState();
     const food=state.customFoods.find(item=>item.id===id);
     const form=food?foodLibrary.foodToServingForm(food):this.data.form;
-    const categoryIndex=Math.max(0,foodLibrary.categories.findIndex(item=>item.key===form.category));
-    this.setData({themeClass:theme.apply(),editId:id,form,categoryIndex},()=>this.refreshEnergyEquivalent());
+    this.setData({themeClass:theme.apply(),editId:id,form},()=>this.refreshEnergyEquivalent());
   },
   onShow(){this.setData({themeClass:theme.apply()});},
   inputField(event){
@@ -25,7 +24,6 @@ Page({
       this.calculateActual();
     });
   },
-  selectCategory(event){const categoryIndex=Number(event.detail.value)||0;this.setData({categoryIndex,'form.category':foodLibrary.categories[categoryIndex].key});},
   switchEnergyUnit(event){
     const next=event.currentTarget.dataset.unit;if(next===this.data.form.energyUnit)return;
     const value=Number(this.data.form.energyPerServing);
