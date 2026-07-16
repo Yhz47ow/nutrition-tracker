@@ -63,7 +63,8 @@ Page({
     const app = getApp();
     app.globalData.pendingMeal = event.currentTarget.dataset.meal || 'lunch';
     app.globalData.pendingDate = this.data.currentDate;
-    wx.switchTab({ url: '/pages/search/search' });
+    app.globalData.openFoodLibraryForEntry = true;
+    wx.switchTab({ url: '/pages/library/library' });
   },
 
   quickAdd(event) {

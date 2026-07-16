@@ -36,6 +36,13 @@ test('custom per-serving nutrition derives shared per-100g values',()=>{
   assert.equal(library.foodToServingForm(food).caloriesPerServing,100);
 });
 
+test('kJ and kcal conversion is understandable and lossless enough for labels',()=>{
+  assert.equal(library.energyToKcal(418.4,'kj'),100);
+  assert.equal(library.kcalToKj(100),418.4);
+  const food=library.perServingToFood({name:'能量棒',category:'other',servingSize:50,energyPerServing:418.4,energyUnit:'kj'},'custom-kj');
+  assert.equal(food.caloriesPer100g,200);
+});
+
 test('favorites toggle and meal templates retain component snapshots',()=>{
   assert.deepEqual(library.toggleFavorite([], 'b-rice'),['b-rice']);
   assert.deepEqual(library.toggleFavorite(['b-rice'], 'b-rice'),[]);

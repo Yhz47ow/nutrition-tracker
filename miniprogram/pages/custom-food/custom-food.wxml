@@ -1,13 +1,18 @@
 <view class="page {{themeClass}}">
   <view class="field"><text class="field-label">食物名称 *</text><input class="input" value="{{form.name}}" data-field="name" bindinput="inputField" placeholder="例如：自制牛肉饼"/></view>
-  <view class="form-grid">
+  <view class="identity-fields">
     <view class="field"><text class="field-label">膳食类别 *</text><picker mode="selector" range="{{categories}}" range-key="label" value="{{categoryIndex}}" bindchange="selectCategory"><view class="picker-field">{{categories[categoryIndex].label}}</view></picker></view>
-    <view class="field"><text class="field-label">每份克重 *</text><input class="input" type="digit" value="{{form.servingSize}}" data-field="servingSize" bindinput="inputField" placeholder="100"/></view>
+    <view class="field"><text class="field-label">每份克重 *</text><view class="unit-input"><input class="input" type="digit" value="{{form.servingSize}}" data-field="servingSize" bindinput="inputField" placeholder="100"/><text>g</text></view></view>
   </view>
   <view class="field"><text class="field-label">拼音首字母（可选）</text><input class="input" value="{{form.pinyinInitials}}" data-field="pinyinInitials" bindinput="inputField" placeholder="例如 zznrp"/></view>
   <view class="section-title">每份营养</view>
-  <view class="form-grid">
-    <view class="field"><text class="field-label">热量 kcal *</text><input class="input" type="digit" value="{{form.caloriesPerServing}}" data-field="caloriesPerServing" bindinput="inputField"/></view>
+  <view class="energy-field">
+    <view class="field-label">包装上的热量/能量 *</view>
+    <view class="energy-units"><view class="energy-unit {{form.energyUnit==='kcal'?'active':''}}" data-unit="kcal" bindtap="switchEnergyUnit">kcal 千卡</view><view class="energy-unit {{form.energyUnit==='kj'?'active':''}}" data-unit="kj" bindtap="switchEnergyUnit">kJ 千焦</view></view>
+    <input class="input energy-input" type="digit" value="{{form.energyPerServing}}" data-field="energyPerServing" bindinput="inputField" placeholder="先选择包装上的单位，再输入数值"/>
+    <view class="energy-help"><text>{{form.energyUnit==='kcal'?'kcal 就是千卡，也常叫大卡':'kJ 是千焦，小程序会自动换算成千卡'}}</text><text class="conversion" wx:if="{{energyEquivalent}}">{{energyEquivalent}}</text></view>
+  </view>
+  <view class="form-grid nutrition-grid">
     <view class="field"><text class="field-label">蛋白质 g</text><input class="input" type="digit" value="{{form.proteinPerServing}}" data-field="proteinPerServing" bindinput="inputField"/></view>
     <view class="field"><text class="field-label">脂肪 g</text><input class="input" type="digit" value="{{form.fatPerServing}}" data-field="fatPerServing" bindinput="inputField"/></view>
     <view class="field"><text class="field-label">碳水 g</text><input class="input" type="digit" value="{{form.carbsPerServing}}" data-field="carbsPerServing" bindinput="inputField"/></view>

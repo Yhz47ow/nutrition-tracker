@@ -8,6 +8,7 @@ App({
     pendingDate: '',
     editFoodId: '',
     editMealTemplateId: '',
+    openFoodLibraryForEntry: false,
     editExerciseId: '',
     systemTheme: 'dark',
     resolvedTheme: 'dark',

@@ -17,6 +17,14 @@ function round(value, digits = 1) {
   return Math.round(number(value) * factor) / factor;
 }
 
+function energyToKcal(value, unit) {
+  return round(String(unit || 'kcal').toLowerCase() === 'kj' ? number(value) / 4.184 : number(value));
+}
+
+function kcalToKj(value) {
+  return round(number(value) * 4.184);
+}
+
 function normalizeFood(food) {
   const servingSize = Math.max(1, number(food && food.servingSize) || 100);
   return Object.assign({}, food, {
@@ -55,13 +63,16 @@ function filterFoods(pool, query, category) {
 function perServingToFood(form, id) {
   const servingSize = Math.max(1, number(form.servingSize) || 100);
   const factor = 100 / servingSize;
+  const caloriesPerServing = form.energyPerServing !== undefined
+    ? energyToKcal(form.energyPerServing, form.energyUnit)
+    : number(form.caloriesPerServing);
   return normalizeFood({
     id: id || `custom_${Date.now()}`,
     name: String(form.name || '').trim(),
     category: form.category || 'other',
     servingSize,
     ediblePortion: 100,
-    caloriesPer100g: round(number(form.caloriesPerServing) * factor),
+    caloriesPer100g: round(caloriesPerServing * factor),
     proteinPer100g: round(number(form.proteinPerServing) * factor),
     fatPer100g: round(number(form.fatPerServing) * factor),
     carbsPer100g: round(number(form.carbsPerServing) * factor),
@@ -81,6 +92,7 @@ function foodToServingForm(food) {
   return {
     name: normalized.name || '', category: normalized.category, servingSize: normalized.servingSize,
     caloriesPerServing: round(normalized.caloriesPer100g * factor),
+    energyPerServing: round(normalized.caloriesPer100g * factor), energyUnit:'kcal',
     proteinPerServing: round(normalized.proteinPer100g * factor),
     fatPerServing: round(normalized.fatPer100g * factor),
     carbsPerServing: round(normalized.carbsPer100g * factor),
@@ -99,5 +111,5 @@ function toggleFavorite(ids, foodId) {
 
 module.exports = {
   builtins, categories:guideline.FOOD_CATEGORIES, CATEGORY_LABELS, normalizeFood, allFoods,
-  matchesFood, filterFoods, perServingToFood, foodToServingForm, toggleFavorite,
+  matchesFood, filterFoods, energyToKcal, kcalToKj, perServingToFood, foodToServingForm, toggleFavorite,
 };

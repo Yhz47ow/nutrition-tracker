@@ -5,8 +5,8 @@ const theme = require('../../utils/theme');
 
 Page({
   data:{
-    themeClass:'', editId:'', categories:foodLibrary.categories, categoryIndex:0,
-    form:{name:'',category:'grain',servingSize:100,caloriesPerServing:'',proteinPerServing:'',fatPerServing:'',carbsPerServing:'',fiberPerServing:'',sodiumPerServing:'',pinyinInitials:''},
+    themeClass:'', editId:'', categories:foodLibrary.categories, categoryIndex:0, energyEquivalent:'',
+    form:{name:'',category:'grain',servingSize:100,energyPerServing:'',energyUnit:'kcal',proteinPerServing:'',fatPerServing:'',carbsPerServing:'',fiberPerServing:'',sodiumPerServing:'',pinyinInitials:''},
     actualAmount:'', actualResult:null,
   },
   onLoad(){
@@ -15,11 +15,31 @@ Page({
     const food=state.customFoods.find(item=>item.id===id);
     const form=food?foodLibrary.foodToServingForm(food):this.data.form;
     const categoryIndex=Math.max(0,foodLibrary.categories.findIndex(item=>item.key===form.category));
-    this.setData({themeClass:theme.apply(),editId:id,form,categoryIndex});
+    this.setData({themeClass:theme.apply(),editId:id,form,categoryIndex},()=>this.refreshEnergyEquivalent());
   },
   onShow(){this.setData({themeClass:theme.apply()});},
-  inputField(event){this.setData({[`form.${event.currentTarget.dataset.field}`]:event.detail.value},()=>this.calculateActual());},
+  inputField(event){
+    const field=event.currentTarget.dataset.field;
+    this.setData({[`form.${field}`]:event.detail.value},()=>{
+      if(field==='energyPerServing')this.refreshEnergyEquivalent();
+      this.calculateActual();
+    });
+  },
   selectCategory(event){const categoryIndex=Number(event.detail.value)||0;this.setData({categoryIndex,'form.category':foodLibrary.categories[categoryIndex].key});},
+  switchEnergyUnit(event){
+    const next=event.currentTarget.dataset.unit;if(next===this.data.form.energyUnit)return;
+    const value=Number(this.data.form.energyPerServing);
+    const converted=value?(next==='kj'?foodLibrary.kcalToKj(value):foodLibrary.energyToKcal(value,'kj')):'';
+    this.setData({'form.energyUnit':next,'form.energyPerServing':converted},()=>{this.refreshEnergyEquivalent();this.calculateActual();});
+  },
+  refreshEnergyEquivalent(){
+    const value=Number(this.data.form.energyPerServing);
+    if(!value)return this.setData({energyEquivalent:''});
+    const text=this.data.form.energyUnit==='kj'
+      ? `约 ${foodLibrary.energyToKcal(value,'kj')} kcal（千卡/大卡）`
+      : `约 ${foodLibrary.kcalToKj(value)} kJ（千焦）`;
+    this.setData({energyEquivalent:text});
+  },
   inputActual(event){this.setData({actualAmount:event.detail.value},()=>this.calculateActual());},
   calculateActual(){
     const amount=Number(this.data.actualAmount);if(!amount)return this.setData({actualResult:null});
@@ -31,8 +51,7 @@ Page({
     if(!name)return wx.showToast({title:'请输入食物名称',icon:'none'});
     if(!(Number(this.data.form.servingSize)>0))return wx.showToast({title:'请输入正确的每份克重',icon:'none'});
     const item=foodLibrary.perServingToFood(this.data.form,this.data.editId||undefined);
-    const state=storage.getDietState();
-    const index=state.customFoods.findIndex(food=>food.id===item.id);
+    const state=storage.getDietState();const index=state.customFoods.findIndex(food=>food.id===item.id);
     if(index>=0)state.customFoods[index]=item;else state.customFoods.push(item);
     storage.saveDietState(state);wx.showToast({title:'已保存',icon:'success'});setTimeout(()=>wx.navigateBack(),450);
   },
