@@ -1,6 +1,6 @@
 <view class="page {{themeClass}}">
   <view class="toolbar"><input class="input grow" value="{{query}}" placeholder="搜索食物" bindinput="inputQuery"/><button class="btn-icon btn-primary" bindtap="newFood">＋</button></view>
-  <view class="segments"><view class="segment {{tab==='builtin'?'active':''}}" data-tab="builtin" bindtap="switchTab">内置食物</view><view class="segment {{tab==='custom'?'active':''}}" data-tab="custom" bindtap="switchTab">我的食物</view></view>
+  <view class="segments"><view class="segment {{tab==='builtin'?'active':''}}" data-tab="builtin" bindtap="switchTab">中国常见食物</view><view class="segment {{tab==='custom'?'active':''}}" data-tab="custom" bindtap="switchTab">我的食物</view></view>
   <view class="empty" wx:if="{{!foods.length}}">暂无食物</view>
   <view class="card list" wx:else><view class="list-row" wx:for="{{foods}}" wx:key="id"><view class="grow"><view class="strong">{{item.name}}</view><view class="small muted">每100g · {{item.caloriesPer100g}}kcal · 碳{{item.carbsPer100g}} 蛋{{item.proteinPer100g}} 脂{{item.fatPer100g}}</view></view><button wx:if="{{tab==='custom'}}" class="btn-icon btn-small btn-secondary" data-id="{{item.id}}" bindtap="editFood">改</button><button wx:if="{{tab==='custom'}}" class="btn-icon btn-small btn-danger" data-id="{{item.id}}" bindtap="deleteFood">删</button><button class="btn-icon btn-small btn-secondary" data-id="{{item.id}}" bindtap="addFood">＋</button></view></view>
 </view>

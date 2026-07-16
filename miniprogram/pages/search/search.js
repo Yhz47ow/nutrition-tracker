@@ -51,22 +51,5 @@ Page({
     wx.navigateTo({ url:'/pages/food-entry/food-entry' });
   },
 
-  scanBarcode() {
-    wx.scanCode({ scanType:['barCode'], success: result => {
-      this.setData({ loading:true });
-      wx.request({
-        url:`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(result.result)}.json`,
-        success: response => {
-          const food = response.data && response.data.status === 1 ? diet.parseProduct(response.data.product, result.result) : null;
-          if (!food) return wx.showToast({ title:'没有找到该商品', icon:'none' });
-          getApp().globalData.pendingFood = food;
-          wx.navigateTo({ url:'/pages/food-entry/food-entry' });
-        },
-        fail: () => wx.showToast({ title:'查询失败', icon:'none' }),
-        complete: () => this.setData({ loading:false }),
-      });
-    }});
-  },
-
   newCustom() { getApp().globalData.editFoodId=''; wx.navigateTo({ url:'/pages/custom-food/custom-food' }); },
 });

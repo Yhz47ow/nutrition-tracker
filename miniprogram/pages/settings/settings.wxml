@@ -11,12 +11,27 @@
   </view>
 
   <view class="section">
+    <view class="section-title">身体与基础代谢</view>
+    <view class="card body-card">
+      <view class="field"><text class="field-label">生理性别</text><view class="segments sex-options"><view class="segment {{profile.sex==='male'?'active':''}}" data-sex="male" bindtap="selectSex">男</view><view class="segment {{profile.sex==='female'?'active':''}}" data-sex="female" bindtap="selectSex">女</view></view></view>
+      <view class="profile-grid">
+        <view class="field"><text class="field-label">年龄</text><input class="input" type="number" value="{{profile.age}}" data-field="age" bindinput="inputProfile" placeholder="岁"/></view>
+        <view class="field"><text class="field-label">身高</text><input class="input" type="digit" value="{{profile.heightCm}}" data-field="heightCm" bindinput="inputProfile" placeholder="cm"/></view>
+        <view class="field"><text class="field-label">体重</text><input class="input" type="digit" value="{{profile.weightKg}}" data-field="weightKg" bindinput="inputProfile" placeholder="kg"/></view>
+      </view>
+      <view class="bmr-result" wx:if="{{bmr}}"><view><text class="bmr-number">{{bmr}}</text><text class="small muted"> kcal/天</text></view><text class="small muted">Mifflin-St Jeor 估算</text></view>
+      <view class="empty bmr-empty" wx:else>填写完整资料后计算基础代谢</view>
+    </view>
+    <view class="small muted body-note">基础代谢是静息状态下维持生命活动的估算消耗，不等同于每日总热量需求。</view>
+  </view>
+
+  <view class="section">
     <view class="section-title">外观</view>
     <view class="segments theme-options"><view class="segment {{theme===item.value?'active':''}}" wx:for="{{themeOptions}}" wx:key="value" data-theme="{{item.value}}" bindtap="selectTheme">{{item.label}}</view></view>
     <view class="small muted">默认跟随微信和手机系统外观，切换后立即生效。</view>
   </view>
 
-  <button class="btn btn-primary save" bindtap="save">保存营养目标</button>
+  <button class="btn btn-primary save" bindtap="save">保存设置</button>
 
   <view class="section backup">
     <view class="section-title">本地备份</view>

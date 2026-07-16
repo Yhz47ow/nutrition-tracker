@@ -1,5 +1,7 @@
 'use strict';
 
+const health = require('./health');
+
 const KEYS = Object.freeze({
   schemaVersion: 'localSchemaVersion',
   dietRecords: 'dietRecords',
@@ -14,6 +16,7 @@ const KEYS = Object.freeze({
 const DEFAULT_SETTINGS = Object.freeze({
   targets: { calories: 1600, carbs: 160, protein: 120, fat: 44 },
   theme: 'system',
+  profile: health.DEFAULT_PROFILE,
 });
 
 function clone(value) {
@@ -51,11 +54,12 @@ function initialize() {
   }
   const settings = read(KEYS.userSettings, DEFAULT_SETTINGS);
   settings.targets = Object.assign({}, DEFAULT_SETTINGS.targets, settings.targets || {});
+  settings.profile = health.normalizeProfile(settings.profile);
   settings.theme = version < 2
     ? (settings.theme === 'dark' ? 'dark' : 'system')
     : (['system', 'dark', 'light'].includes(settings.theme) ? settings.theme : 'system');
   write(KEYS.userSettings, settings);
-  write(KEYS.schemaVersion, 2);
+  write(KEYS.schemaVersion, 3);
 }
 
 function getDietState() {
@@ -140,6 +144,8 @@ function importBackup(payload) {
 
   const settings = Object.assign({}, currentDiet.settings, incomingSettings);
   settings.targets = Object.assign({}, DEFAULT_SETTINGS.targets, currentDiet.settings.targets || {}, incomingSettings.targets || {});
+  settings.profile = health.normalizeProfile(incomingSettings.profile || currentDiet.settings.profile);
+  settings.theme = ['system', 'dark', 'light'].includes(settings.theme) ? settings.theme : 'system';
   saveDietState({
     records: mergeRecords(currentDiet.records, incomingRecords),
     customFoods: mergeById(currentDiet.customFoods, payload.customFoods || []),

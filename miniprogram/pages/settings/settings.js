@@ -2,11 +2,14 @@ const storage = require('../../utils/storage');
 const theme = require('../../utils/theme');
 const media = require('../../utils/media');
 const dataIo = require('../../utils/data-io');
+const health = require('../../utils/health');
 
 Page({
   data: {
     themeClass: 'dark-theme',
     targets: {},
+    profile: health.DEFAULT_PROFILE,
+    bmr: null,
     theme: 'system',
     themeOptions: [
       { value: 'system', label: '跟随系统' },
@@ -17,11 +20,24 @@ Page({
 
   onShow() {
     const state = storage.getDietState();
-    this.setData({ themeClass: theme.apply(), targets: state.settings.targets, theme: state.settings.theme });
+    const profile = health.normalizeProfile(state.settings.profile);
+    this.setData({ themeClass: theme.apply(), targets: state.settings.targets, profile, bmr: health.calculateBmr(profile), theme: state.settings.theme });
   },
 
   inputTarget(event) {
     this.setData({ [`targets.${event.currentTarget.dataset.field}`]: event.detail.value });
+  },
+
+  inputProfile(event) {
+    this.setData({ [`profile.${event.currentTarget.dataset.field}`]: event.detail.value }, () => this.refreshBmr());
+  },
+
+  selectSex(event) {
+    this.setData({ 'profile.sex': event.currentTarget.dataset.sex }, () => this.refreshBmr());
+  },
+
+  refreshBmr() {
+    this.setData({ bmr: health.calculateBmr(this.data.profile) });
   },
 
   preset(event) {
@@ -47,8 +63,9 @@ Page({
       fat: Math.max(0, Number(this.data.targets.fat) || 0),
     };
     state.settings.theme = this.data.theme;
+    state.settings.profile = health.normalizeProfile(this.data.profile);
     storage.saveDietState(state);
-    this.setData({ themeClass: theme.apply() });
+    this.setData({ themeClass: theme.apply(), profile: state.settings.profile, bmr: health.calculateBmr(state.settings.profile) });
     wx.showToast({ title: '设置已保存', icon: 'success' });
   },
 

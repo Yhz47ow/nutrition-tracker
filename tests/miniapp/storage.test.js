@@ -22,6 +22,7 @@ test('initialization creates plain local storage collections', () => {
   assert.deepEqual(wx.getStorageSync('exerciseLibrary'), []);
   assert.equal(wx.getStorageSync('userSettings').targets.protein, 120);
   assert.equal(wx.getStorageSync('userSettings').theme, 'system');
+  assert.deepEqual(wx.getStorageSync('userSettings').profile, {sex:'',age:'',heightCm:'',weightKg:''});
 });
 
 test('theme preference supports system, dark and light modes', () => {
@@ -48,7 +49,7 @@ test('version one default theme migrates to follow system', () => {
   wx.setStorageSync('userSettings', {targets:{calories:1800},theme:'light'});
   const storage = require('../../miniprogram/utils/storage');
   storage.initialize();
-  assert.equal(wx.getStorageSync('localSchemaVersion'), 2);
+  assert.equal(wx.getStorageSync('localSchemaVersion'), 3);
   assert.equal(wx.getStorageSync('userSettings').theme, 'system');
   assert.equal(wx.getStorageSync('userSettings').targets.calories, 1800);
 });

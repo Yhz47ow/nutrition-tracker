@@ -34,6 +34,7 @@ test('backup exports to chat and can be selected for import', async () => {
   storage.initialize();
   const diet = storage.getDietState();
   diet.records['2026-07-16'] = {breakfast:[{id:'egg',foodName:'鸡蛋'}],lunch:[],dinner:[],snack:[]};
+  diet.settings.profile = {sex:'male',age:30,heightCm:175,weightKg:70};
   storage.saveDietState(diet);
 
   const exported = await dataIo.exportToChat();
@@ -41,6 +42,7 @@ test('backup exports to chat and can be selected for import', async () => {
   assert.equal(runtime.shared.filePath, exported.filePath);
   const parsed = JSON.parse(runtime.files.get(exported.filePath));
   assert.equal(parsed.dietRecords['2026-07-16'].breakfast[0].foodName, '鸡蛋');
+  assert.equal(parsed.userSettings.profile.heightCm, 175);
 
   const imported = await dataIo.importFromChat();
   assert.equal(imported.payload.dietRecords['2026-07-16'].breakfast[0].id, 'egg');
