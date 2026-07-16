@@ -1,0 +1,15 @@
+<view class="page {{themeClass}}">
+  <view class="search-row"><input class="input grow" value="{{query}}" placeholder="搜索食物名称" confirm-type="search" bindinput="inputQuery" bindconfirm="search"/><button class="btn-icon btn-primary" bindtap="search">搜</button><button class="btn-icon btn-secondary" bindtap="scanBarcode">码</button></view>
+  <view class="segments"><view class="segment {{tab==='local'?'active':''}}" data-tab="local" bindtap="switchTab">内置库</view><view class="segment {{tab==='online'?'active':''}}" data-tab="online" bindtap="switchTab">联网搜索</view><view class="segment {{tab==='custom'?'active':''}}" data-tab="custom" bindtap="switchTab">我的食物</view></view>
+  <view class="toast-note" wx:if="{{tab==='online'}}">联网结果来自 OpenFoodFacts。商品数据可能不完整，请按包装营养表核对。</view>
+  <button class="btn btn-secondary new-custom" bindtap="newCustom">＋ 新建自定义食物</button>
+  <view class="empty" wx:if="{{loading}}">正在搜索…</view>
+  <view class="empty" wx:elif="{{!results.length}}">{{tab==='online'?'输入名称后点击搜索':'没有匹配的食物'}}</view>
+  <view class="card results" wx:else>
+    <view class="list-row" wx:for="{{results}}" wx:key="id" data-index="{{index}}" bindtap="selectFood">
+      <view class="grow"><view class="strong">{{item.name}}</view><view class="small muted">每100g · 碳{{item.carbsPer100g}} 蛋{{item.proteinPer100g}} 脂{{item.fatPer100g}}</view></view>
+      <view class="result-cal"><text class="strong">{{item.caloriesPer100g}}</text><text class="small muted">kcal</text></view>
+      <text class="badge">{{item.source==='custom'?'自定义':item.source==='api'?'联网':'内置'}}</text>
+    </view>
+  </view>
+</view>

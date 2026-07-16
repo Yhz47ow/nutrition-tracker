@@ -1,0 +1,9 @@
+const storage=require('../../utils/storage');const diet=require('../../utils/diet');const theme=require('../../utils/theme');
+Page({
+  data:{themeClass:'',editId:'',form:{name:'',unit:'克',caloriesPer100g:'',carbsPer100g:'',proteinPer100g:'',fatPer100g:'',servingSize:100},actualAmount:'',actualResult:null},
+  onLoad(){const id=getApp().globalData.editFoodId||'';const state=storage.getDietState();const food=state.customFoods.find(item=>item.id===id);this.setData({themeClass:theme.apply(),editId:id,form:food?Object.assign({},food):this.data.form});},
+  inputField(event){this.setData({[`form.${event.currentTarget.dataset.field}`]:event.detail.value},()=>this.calculateActual());},
+  inputActual(event){this.setData({actualAmount:event.detail.value},()=>this.calculateActual());},
+  calculateActual(){const amount=Number(this.data.actualAmount);if(!amount)return this.setData({actualResult:null});const food={caloriesPer100g:Number(this.data.form.caloriesPer100g)||0,carbsPer100g:Number(this.data.form.carbsPer100g)||0,proteinPer100g:Number(this.data.form.proteinPer100g)||0,fatPer100g:Number(this.data.form.fatPer100g)||0};this.setData({actualResult:diet.calcMacros(food,amount)});},
+  save(){const form=this.data.form;const name=String(form.name||'').trim();if(!name)return wx.showToast({title:'请输入食物名称',icon:'none'});const item={id:this.data.editId||`custom_${Date.now()}`,name,unit:String(form.unit||'克').trim()||'克',caloriesPer100g:Number(form.caloriesPer100g)||0,carbsPer100g:Number(form.carbsPer100g)||0,proteinPer100g:Number(form.proteinPer100g)||0,fatPer100g:Number(form.fatPer100g)||0,servingSize:Math.max(1,Number(form.servingSize)||100),source:'custom'};const state=storage.getDietState();const index=state.customFoods.findIndex(food=>food.id===item.id);if(index>=0)state.customFoods[index]=item;else state.customFoods.push(item);storage.saveDietState(state);wx.showToast({title:'已保存',icon:'success'});setTimeout(()=>wx.navigateBack(),450);},
+});

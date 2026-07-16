@@ -1,0 +1,1 @@
+.search-row{display:flex;align-items:center;gap:12rpx;margin-bottom:18rpx}.new-custom{margin:18rpx 0}.results{padding-top:0;padding-bottom:0}.result-cal{display:flex;flex-direction:column;text-align:right}

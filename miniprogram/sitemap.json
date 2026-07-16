@@ -1,0 +1,4 @@
+{
+  "desc": "本地健康记录工具不参与微信搜索索引",
+  "rules": [{"action": "disallow", "page": "*"}]
+}

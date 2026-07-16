@@ -1,0 +1,19 @@
+{
+  "appid": "touristappid",
+  "projectname": "nutrition-workout-miniapp",
+  "description": "营养与训练追踪微信小程序",
+  "miniprogramRoot": "miniprogram/",
+  "compileType": "miniprogram",
+  "setting": {
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "urlCheck": true,
+    "coverView": true,
+    "showShadowRootInWxmlPanel": true,
+    "useCompilerPlugins": false
+  },
+  "simulatorType": "wechat",
+  "condition": {}
+}

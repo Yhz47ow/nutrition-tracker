@@ -1,0 +1,36 @@
+{
+  "pages": [
+    "pages/home/home",
+    "pages/search/search",
+    "pages/library/library",
+    "pages/workout/workout",
+    "pages/records/records",
+    "pages/food-entry/food-entry",
+    "pages/custom-food/custom-food",
+    "pages/training/training",
+    "pages/exercise-form/exercise-form",
+    "pages/settings/settings"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#2f855a",
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "营养与训练追踪",
+    "backgroundColor": "#f4f6f8",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#768078",
+    "selectedColor": "#2f855a",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {"pagePath": "pages/home/home", "text": "首页"},
+      {"pagePath": "pages/search/search", "text": "搜索"},
+      {"pagePath": "pages/library/library", "text": "食物库"},
+      {"pagePath": "pages/workout/workout", "text": "训练"},
+      {"pagePath": "pages/records/records", "text": "记录"}
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

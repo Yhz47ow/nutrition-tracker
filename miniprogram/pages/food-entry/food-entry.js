@@ -1,0 +1,12 @@
+const storage=require('../../utils/storage');const diet=require('../../utils/diet');const dates=require('../../utils/date');const media=require('../../utils/media');const theme=require('../../utils/theme');
+Page({
+  data:{themeClass:'',food:null,date:'',meal:'lunch',grams:100,macros:null,photo:'',recommendation:null,mealOptions:diet.MEAL_TYPES.map(type=>({type,name:diet.MEAL_META[type].name}))},
+  onLoad(){const app=getApp();const food=app.globalData.pendingFood;if(!food){wx.showModal({title:'没有选择食物',content:'请返回搜索页面重新选择。',showCancel:false,success:()=>wx.navigateBack()});return;}const date=app.globalData.pendingDate||dates.dateKey(Date.now());const meal=app.globalData.pendingMeal||'lunch';const grams=Number(food.servingSize)||100;const state=storage.getDietState();const summary=diet.summarize(state.records,date,state.settings.targets);this.setData({themeClass:theme.apply(),food,date,meal,grams,macros:diet.calcMacros(food,grams),recommendation:diet.recommendedAmount(food,summary)});},
+  inputGrams(event){const grams=Math.max(1,Number(event.detail.value)||1);this.setData({grams,macros:diet.calcMacros(this.data.food,grams)});},
+  adjustGrams(event){const grams=Math.max(1,Number(this.data.grams)+Number(event.currentTarget.dataset.delta));this.setData({grams,macros:diet.calcMacros(this.data.food,grams)});},
+  useRecommendation(){if(this.data.recommendation&&this.data.recommendation.grams)this.setData({grams:this.data.recommendation.grams,macros:diet.calcMacros(this.data.food,this.data.recommendation.grams)});},
+  selectMeal(event){this.setData({meal:event.currentTarget.dataset.meal});},
+  choosePhoto(){wx.chooseMedia({count:1,mediaType:['image'],sourceType:['album','camera'],success:async result=>{try{const path=await media.persistImage(result.tempFiles[0].tempFilePath);if(this.data.photo)media.deleteImage(this.data.photo);this.setData({photo:path});}catch(error){wx.showToast({title:'照片保存失败',icon:'none'});}}});},
+  removePhoto(){media.deleteImage(this.data.photo);this.setData({photo:''});},
+  save(){const state=storage.getDietState();const meals=diet.normalizeRecords(state.records,this.data.date);meals[this.data.meal].push(diet.createRecord(this.data.food,this.data.grams,this.data.meal,this.data.photo));state.records[this.data.date]=meals;storage.saveDietState(state);getApp().globalData.pendingFood=null;wx.showToast({title:'已添加',icon:'success'});setTimeout(()=>{const pages=getCurrentPages();if(pages.length>1)wx.navigateBack();else wx.switchTab({url:'/pages/home/home'});},500);},
+});

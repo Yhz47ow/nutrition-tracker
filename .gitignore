@@ -4,6 +4,7 @@ server/data.db
 *.log
 .DS_Store
 ._*
+**/._*
 Thumbs.db
 *.bak
 www/
@@ -12,3 +13,5 @@ android/local.properties
 android/app/build/
 ios/App/DerivedData/
 ios/App/build/
+project.private.config.json
+miniprogram_npm/

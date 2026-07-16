@@ -1,6 +1,6 @@
 # 营养与训练追踪
 
-一个面向手机的饮食与力量训练记录 PWA。饮食功能沿用原有数据结构，训练模块独立存储。
+一个面向手机的饮食与力量训练记录应用，提供 PWA、Capacitor 原生工程和原生微信小程序。
 
 ## ✨ 功能
 
@@ -15,6 +15,18 @@
 | ⏱️ 组间休息 | 环形倒计时、暂停、跳过、+10 秒、声音和震动提醒 |
 | 📈 训练趋势 | 月历查看训练日，回顾每组重量/次数与近期趋势 |
 | 📱 多端应用 | 支持 PWA，并提供 Capacitor iOS/Android 原生工程 |
+| 微信小程序 | 原生 WXML/WXSS/JavaScript，本地存储且无需远端账号 |
+
+## 微信小程序
+
+小程序源码位于 `miniprogram/`，项目入口为根目录的 `project.config.json`。完整配置、数据迁移、真机测试和体验版上传步骤见 [`MINIPROGRAM.md`](MINIPROGRAM.md)。
+
+```bash
+pnpm run miniapp:validate
+pnpm run miniapp:test
+```
+
+小程序数据只保存在当前微信设备，并提供 JSON 文件导入导出。小程序代码不使用 GitHub API 或 Gist。
 
 ## 🚀 在 iPhone 上使用
 

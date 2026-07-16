@@ -1,0 +1,10 @@
+const storage=require('../../utils/storage');const diet=require('../../utils/diet');const dates=require('../../utils/date');const media=require('../../utils/media');const theme=require('../../utils/theme');
+Page({
+  data:{themeClass:'',dates:[],selectedDate:'',summary:null},
+  onShow(){this.setData({themeClass:theme.apply()});this.refresh();},
+  refresh(){const state=storage.getDietState();const keys=Object.keys(state.records).filter(key=>diet.MEAL_TYPES.some(type=>(state.records[key][type]||[]).length)).sort().reverse();const selectedDate=this.data.selectedDate&&keys.includes(this.data.selectedDate)?this.data.selectedDate:(keys[0]||'');this.setData({dates:keys.map(key=>({key,label:dates.formatDate(key)})),selectedDate,summary:selectedDate?diet.summarize(state.records,selectedDate,state.settings.targets):null});},
+  chooseDate(event){this.setData({selectedDate:event.currentTarget.dataset.date},()=>this.refresh());},
+  previewPhoto(event){const path=event.currentTarget.dataset.path;if(path)wx.previewImage({current:path,urls:[path]});},
+  deleteItem(event){const{meal,index}=event.currentTarget.dataset;wx.showModal({title:'删除记录',content:'确定删除这条记录吗？',success:r=>{if(!r.confirm)return;const state=storage.getDietState();const meals=diet.normalizeRecords(state.records,this.data.selectedDate);const removed=meals[meal].splice(Number(index),1)[0];if(removed&&removed.photo)media.deleteImage(removed.photo);state.records[this.data.selectedDate]=meals;storage.saveDietState(state);this.refresh();}});},
+  clearAll(){wx.showModal({title:'清除全部饮食记录',content:'此操作无法撤销，自定义食物和训练记录不会被删除。',confirmColor:'#d64545',success:r=>{if(!r.confirm)return;const state=storage.getDietState();state.records={};storage.saveDietState(state);this.setData({selectedDate:''});this.refresh();}});},
+});

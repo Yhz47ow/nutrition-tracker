@@ -1,0 +1,22 @@
+const workoutData=require('../../utils/workout-data');const dates=require('../../utils/date');const theme=require('../../utils/theme');
+Page({
+  data:{themeClass:'',tab:'current',active:null,latest:null,filter:'全部',query:'',bodyParts:workoutData.BODY_PARTS,exercises:[],month:dates.monthKey(Date.now()),calendar:[],selectedDate:dates.dateKey(Date.now()),dayWorkouts:[],trend:null},
+  onShow(){this.setData({themeClass:theme.apply()});this.refresh();},
+  refresh(){this._state=workoutData.load();const active=this._state.activeWorkout?{parts:workoutData.workoutParts(this._state.activeWorkout),sets:workoutData.completedSets(this._state.activeWorkout),duration:dates.formatDuration((Date.now()-this._state.activeWorkout.startedAt)/1000)}:null;const latest=[...this._state.workouts].sort((a,b)=>b.startedAt-a.startedAt)[0];this.setData({active,latest:latest?this.presentWorkout(latest):null});this.refreshExercises();this.refreshCalendar();},
+  presentWorkout(workout){return Object.assign({},workout,{parts:workoutData.workoutParts(workout),durationLabel:dates.formatDuration(workout.duration),exerciseRows:(workout.exercises||[]).map(exercise=>Object.assign({},exercise,{setsLabel:(exercise.sets||[]).filter(set=>set.completed).map(set=>`${set.setNumber}. ${set.weight}kg × ${set.reps}`).join(' · ')}))});},
+  switchTab(event){this.setData({tab:event.currentTarget.dataset.tab});},
+  start(){wx.navigateTo({url:'/pages/training/training'});},
+  inputQuery(event){this.setData({query:event.detail.value},()=>this.refreshExercises());},
+  setFilter(event){this.setData({filter:event.currentTarget.dataset.part},()=>this.refreshExercises());},
+  refreshExercises(){if(!this._state)this._state=workoutData.load();const q=this.data.query.trim().toLowerCase();const exercises=workoutData.allExercises(this._state).filter(item=>(this.data.filter==='全部'||item.bodyPart===this.data.filter)&&(!q||`${item.name} ${item.bodyPart} ${item.note||''}`.toLowerCase().includes(q))).map(item=>Object.assign({},item,{short:workoutData.BODY_PART_SHORT[item.bodyPart]||'其'}));this.setData({exercises});},
+  newExercise(){getApp().globalData.editExerciseId='';wx.navigateTo({url:'/pages/exercise-form/exercise-form'});},
+  editExercise(event){getApp().globalData.editExerciseId=event.currentTarget.dataset.id;wx.navigateTo({url:'/pages/exercise-form/exercise-form'});},
+  deleteExercise(event){const id=event.currentTarget.dataset.id;wx.showModal({title:'删除自定义动作',content:'历史训练不会受影响。',success:r=>{if(!r.confirm)return;this._state.customExercises=this._state.customExercises.filter(item=>item.id!==id);workoutData.save(this._state);this.refresh();}});},
+  addDirect(event){const exercise=workoutData.findExercise(this._state,event.currentTarget.dataset.id);if(!exercise)return;if(!this._state.activeWorkout)this._state.activeWorkout=workoutData.Core.createWorkout();this._state.activeWorkout.exercises.push(workoutData.Core.createWorkoutExercise(exercise,this._state.activeWorkout.exercises.length));this._state.activeWorkout.currentExerciseIndex=this._state.activeWorkout.exercises.length-1;workoutData.save(this._state);wx.navigateTo({url:'/pages/training/training'});},
+  changeMonth(event){const [year,month]=this.data.month.split('-').map(Number);const date=new Date(year,month-1+Number(event.currentTarget.dataset.delta),1);this.setData({month:dates.monthKey(date),selectedDate:dates.dateKey(date)},()=>this.refreshCalendar());},
+  refreshCalendar(){if(!this._state)this._state=workoutData.load();const [year,month]=this.data.month.split('-').map(Number);const first=new Date(year,month-1,1).getDay();const count=new Date(year,month,0).getDate();const workoutDates=new Set(this._state.workouts.map(item=>item.date));const calendar=[];for(let i=0;i<first;i++)calendar.push({blank:true,key:`b${i}`});for(let day=1;day<=count;day++){const key=`${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;calendar.push({key,day,has:workoutDates.has(key),active:key===this.data.selectedDate});}const dayWorkouts=this._state.workouts.filter(item=>item.date===this.data.selectedDate).map(item=>this.presentWorkout(item));this.setData({calendar,dayWorkouts});},
+  chooseDay(event){const selectedDate=event.currentTarget.dataset.date;this.setData({selectedDate},()=>this.refreshCalendar());},
+  showTrend(event){const trend=workoutData.recentTrend(this._state.workouts,event.currentTarget.dataset.id,event.currentTarget.dataset.name);this.setData({trend:{name:event.currentTarget.dataset.name,items:trend}});},
+  closeTrend(){this.setData({trend:null});},
+  noop(){},
+});

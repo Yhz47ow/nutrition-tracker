@@ -1,0 +1,71 @@
+<view class="page {{themeClass}}" wx:if="{{summary}}">
+  <view class="top-actions">
+    <view>
+      <view class="eyebrow">营养与训练追踪</view>
+      <view class="page-heading">今日概览</view>
+    </view>
+    <button class="btn-icon settings" bindtap="openSettings">设置</button>
+  </view>
+
+  <view class="date-nav">
+    <button class="btn-icon btn-secondary" data-delta="-1" bindtap="changeDate">‹</button>
+    <picker mode="date" value="{{currentDate}}" bindchange="chooseDate">
+      <view class="date-picker"><text class="strong">{{summary.dateLabel}}</text><text class="small muted">{{currentDate}}</text></view>
+    </picker>
+    <button class="btn btn-small btn-secondary" bindtap="today">今天</button>
+    <button class="btn-icon btn-secondary" data-delta="1" bindtap="changeDate">›</button>
+  </view>
+
+  <view class="summary-grid">
+    <view class="summary-tile"><text class="tile-label">总热量</text><view><text class="tile-value">{{summary.totals.calories}}</text><text class="tile-unit"> kcal</text></view><view class="progress"><view class="progress-fill" style="width:{{summary.percentages.calories}}%"></view></view></view>
+    <view class="summary-tile"><text class="tile-label">总重量</text><view><text class="tile-value">{{summary.totals.weight}}</text><text class="tile-unit"> g</text></view><text class="tile-sub">{{summary.totals.mealCount}} 餐</text></view>
+    <view class="summary-tile"><text class="tile-label">距上餐</text><view><text class="tile-value">{{summary.fasting.value}}</text><text class="tile-unit"> h</text></view><text class="tile-sub">{{summary.fasting.label}}</text></view>
+    <view class="summary-tile"><text class="tile-label">剩余热量</text><view><text class="tile-value">{{summary.remaining.calories > 0 ? summary.remaining.calories : 0}}</text><text class="tile-unit"> kcal</text></view><text class="tile-sub">目标 {{summary.targets.calories}}</text></view>
+  </view>
+
+  <view class="card workout-card" bindtap="startWorkout">
+    <view class="row"><view class="workout-mark">训</view><view class="grow"><view class="strong">{{activeWorkout ? '训练进行中' : '力量训练'}}</view><view class="small muted" wx:if="{{activeWorkout}}">{{activeWorkout.parts}} · {{activeWorkout.sets}} 组 · {{activeWorkout.duration}}</view><view class="small muted" wx:elif="{{recentWorkout}}">最近 {{recentWorkout.parts}} · {{recentWorkout.duration}} · 约 {{recentWorkout.calories}} kcal</view><view class="small muted" wx:else>动作、组数和组间休息</view></view><text class="workout-go">{{activeWorkout ? '继续' : '开始'}}</text></view>
+  </view>
+
+  <view class="section">
+    <view class="section-title">营养分布</view>
+    <view class="macro-grid">
+      <view class="macro-item carbs"><text>碳水</text><text class="macro-value">{{summary.totals.carbs}}g</text><text class="small">{{summary.percentages.carbs}}%</text></view>
+      <view class="macro-item protein"><text>蛋白质</text><text class="macro-value">{{summary.totals.protein}}g</text><text class="small">{{summary.percentages.protein}}%</text></view>
+      <view class="macro-item fat"><text>脂肪</text><text class="macro-value">{{summary.totals.fat}}g</text><text class="small">{{summary.percentages.fat}}%</text></view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-title">剩余配额</view>
+    <view class="remaining-grid">
+      <view><text class="small muted">碳水</text><text class="remaining-value">{{summary.remaining.carbs > 0 ? summary.remaining.carbs : 0}}g</text></view>
+      <view><text class="small muted">蛋白质</text><text class="remaining-value">{{summary.remaining.protein > 0 ? summary.remaining.protein : 0}}g</text></view>
+      <view><text class="small muted">脂肪</text><text class="remaining-value">{{summary.remaining.fat > 0 ? summary.remaining.fat : 0}}g</text></view>
+    </view>
+  </view>
+
+  <view class="section" wx:if="{{recommendations.length}}">
+    <view class="section-title">智能推荐</view>
+    <view class="card recommendation-list">
+      <view class="list-row" wx:for="{{recommendations}}" wx:key="id" data-index="{{index}}" bindtap="quickAdd">
+        <view class="grow"><view class="strong">{{item.food.name}}</view><view class="small muted">{{item.grams}}g · {{item.macros.calories}} kcal · 碳{{item.macros.carbs}} 蛋{{item.macros.protein}} 脂{{item.macros.fat}}</view></view>
+        <button class="btn-icon btn-small btn-secondary">＋</button>
+      </view>
+    </view>
+  </view>
+
+  <view class="section" wx:for="{{summary.meals}}" wx:key="type" wx:for-item="meal">
+    <view class="meal-head"><view class="meal-icon">{{meal.icon}}</view><text class="strong">{{meal.name}}</text><text class="grow small muted">{{meal.calories}} kcal · 碳{{meal.carbsPct}}% 蛋{{meal.proteinPct}}% 脂{{meal.fatPct}}%</text><button class="btn-icon copy" data-meal="{{meal.type}}" bindtap="copyMeal">复制</button></view>
+    <view class="card meal-card">
+      <view class="empty" wx:if="{{!meal.items.length}}">暂无记录</view>
+      <view class="list-row" wx:for="{{meal.items}}" wx:key="id" wx:for-item="food" wx:for-index="foodIndex">
+        <image wx:if="{{food.photo}}" class="food-photo" src="{{food.photo}}" mode="aspectFill" data-path="{{food.photo}}" bindtap="previewPhoto"></image>
+        <view class="grow"><view class="strong">{{food.foodName || food.name}}</view><view class="small muted">{{food.grams}}g · 碳{{food.carbs}} 蛋{{food.protein}} 脂{{food.fat}}</view></view>
+        <view class="food-cal"><text class="strong">{{food.calories}}</text><text class="small muted">kcal</text></view>
+        <button class="delete" data-meal="{{meal.type}}" data-index="{{foodIndex}}" bindtap="deleteFood">×</button>
+      </view>
+      <button class="add-meal" data-meal="{{meal.type}}" bindtap="addFood">＋ 添加食物</button>
+    </view>
+  </view>
+</view>
