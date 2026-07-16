@@ -6,6 +6,19 @@ const root = path.resolve(import.meta.dirname, '..');
 const mini = path.join(root, 'miniprogram');
 const failures = [];
 
+function findAppleDoubleFiles(directory) {
+  return fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
+    const target = path.join(directory, entry.name);
+    if (entry.name.startsWith('._')) return [target];
+    return entry.isDirectory() ? findAppleDoubleFiles(target) : [];
+  });
+}
+
+const appleDoubleFiles = findAppleDoubleFiles(mini);
+if (appleDoubleFiles.length) {
+  failures.push(`发现 ${appleDoubleFiles.length} 个 macOS AppleDouble 文件（._*），请运行 dot_clean miniprogram 后重试`);
+}
+
 function walk(directory) {
   return fs.readdirSync(directory, { withFileTypes: true }).filter(entry => !entry.name.startsWith('._')).flatMap(entry => {
     const target = path.join(directory, entry.name);

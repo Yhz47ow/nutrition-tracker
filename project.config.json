@@ -4,6 +4,12 @@
   "description": "营养与训练追踪微信小程序",
   "miniprogramRoot": "miniprogram/",
   "compileType": "miniprogram",
+  "packOptions": {
+    "ignore": [
+      { "type": "glob", "value": "**/._*" },
+      { "type": "glob", "value": "**/.DS_Store" }
+    ]
+  },
   "setting": {
     "es6": true,
     "enhance": true,
