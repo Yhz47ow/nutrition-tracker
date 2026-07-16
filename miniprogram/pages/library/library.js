@@ -3,10 +3,11 @@ const diet=require('../../utils/diet');
 const dates=require('../../utils/date');
 const foodLibrary=require('../../utils/food-library');
 const mealTemplates=require('../../utils/meal-templates');
+const dishLibrary=require('../../utils/dish-library');
 const theme=require('../../utils/theme');
 
 Page({
-  data:{themeClass:'',tab:'builtin',query:'',foods:[],templates:[],categories:[{key:'all',label:'全部'}].concat(foodLibrary.categories),category:'all'},
+  data:{themeClass:'',tab:'builtin',query:'',foods:[],dishes:[],templates:[],categories:[{key:'all',label:'全部'}].concat(foodLibrary.categories),category:'all'},
   onShow(){
     const app=getApp();const reset=Boolean(app.globalData.openFoodLibraryForEntry);app.globalData.openFoodLibraryForEntry=false;
     this.setData(Object.assign({themeClass:theme.apply()},reset?{tab:'builtin',query:'',category:'all'}:{}),()=>this.refresh());
@@ -17,7 +18,7 @@ Page({
     if(this.data.tab==='favorite')pool=foodLibrary.allFoods(state.customFoods).filter(item=>favoriteSet.has(String(item.id)));
     const foods=foodLibrary.filterFoods(pool,this.data.query,this.data.category).map(item=>Object.assign({},item,{favorite:favoriteSet.has(String(item.id))}));
     const templates=(state.mealTemplates||[]).filter(item=>!this.data.query||item.name.includes(this.data.query));
-    this.setData({foods,templates});
+    this.setData({foods,dishes:dishLibrary.list(this.data.query),templates});
   },
   switchTab(event){this.setData({tab:event.currentTarget.dataset.tab},()=>this.refresh());},
   inputQuery(event){this.setData({query:event.detail.value},()=>this.refresh());},
@@ -26,6 +27,7 @@ Page({
   editFood(event){getApp().globalData.editFoodId=event.currentTarget.dataset.id;wx.navigateTo({url:'/pages/custom-food/custom-food'});},
   deleteFood(event){const id=event.currentTarget.dataset.id;wx.showModal({title:'删除自定义食物',content:'历史记录和已保存套餐不会受影响。',success:result=>{if(!result.confirm)return;const state=storage.getDietState();state.customFoods=state.customFoods.filter(item=>item.id!==id);state.favoriteFoods=state.favoriteFoods.filter(item=>String(item)!==String(id));storage.saveDietState(state);this.refresh();}});},
   addFood(event){const state=storage.getDietState();const food=foodLibrary.allFoods(state.customFoods).find(item=>item.id===event.currentTarget.dataset.id);if(!food)return;getApp().globalData.pendingFood=food;wx.navigateTo({url:'/pages/food-entry/food-entry'});},
+  selectDish(event){const dish=dishLibrary.dishes.find(item=>item.id===event.currentTarget.dataset.id);if(!dish)return;getApp().globalData.pendingDish=dish;wx.navigateTo({url:'/pages/dish-entry/dish-entry'});},
   toggleFavorite(event){const state=storage.getDietState();state.favoriteFoods=foodLibrary.toggleFavorite(state.favoriteFoods,event.currentTarget.dataset.id);storage.saveDietState(state);this.refresh();},
   newTemplate(){getApp().globalData.editMealTemplateId='';wx.navigateTo({url:'/pages/meal-form/meal-form'});},
   editTemplate(event){getApp().globalData.editMealTemplateId=event.currentTarget.dataset.id;wx.navigateTo({url:'/pages/meal-form/meal-form'});},

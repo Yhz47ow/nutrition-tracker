@@ -4,6 +4,7 @@ const theme = require('./utils/theme');
 App({
   globalData: {
     pendingFood: null,
+    pendingDish: null,
     pendingMeal: 'lunch',
     pendingDate: '',
     editFoodId: '',

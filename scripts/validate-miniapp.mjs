@@ -87,7 +87,7 @@ for (const file of files.filter(file => /pages\/.+\.(?:js|wxml|wxss)$/.test(file
   }
 }
 
-for (const required of ['assets/rest-finished.wav', 'utils/foods.js', 'utils/workout-core.js', 'utils/data-io.js', 'utils/health.js']) {
+for (const required of ['assets/rest-finished.wav', 'data/foodDatabase.js', 'data/dishDatabase.js', 'utils/foods.js', 'utils/dish-library.js', 'utils/workout-core.js', 'utils/data-io.js', 'utils/health.js']) {
   if (!fs.existsSync(path.join(mini, required))) failures.push(`缺少资源: ${required}`);
 }
 

@@ -5,6 +5,7 @@
     "pages/workout/workout",
     "pages/records/records",
     "pages/food-entry/food-entry",
+    "pages/dish-entry/dish-entry",
     "pages/custom-food/custom-food",
     "pages/meal-form/meal-form",
     "pages/training/training",
