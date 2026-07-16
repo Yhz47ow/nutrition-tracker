@@ -1,7 +1,6 @@
 <view class="page {{themeClass}}">
   <view class="field"><text class="field-label">食物名称 *</text><input class="input" value="{{form.name}}" data-field="name" bindinput="inputField" placeholder="例如：自制牛肉饼"/></view>
   <view class="field"><text class="field-label">每份克重 *</text><view class="unit-input"><input class="input" type="digit" value="{{form.servingSize}}" data-field="servingSize" bindinput="inputField" placeholder="100"/><text>g</text></view></view>
-  <view class="field"><text class="field-label">拼音首字母（可选）</text><input class="input" value="{{form.pinyinInitials}}" data-field="pinyinInitials" bindinput="inputField" placeholder="例如 zznrp"/></view>
   <view class="section-title">每份营养</view>
   <view class="energy-field">
     <view class="field-label">包装上的热量/能量 *</view>

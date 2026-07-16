@@ -6,7 +6,7 @@ const theme = require('../../utils/theme');
 Page({
   data:{
     themeClass:'', editId:'', energyEquivalent:'',
-    form:{name:'',category:'other',servingSize:100,energyPerServing:'',energyUnit:'kcal',proteinPerServing:'',fatPerServing:'',carbsPerServing:'',fiberPerServing:'',sodiumPerServing:'',pinyinInitials:''},
+    form:{name:'',category:'other',servingSize:100,energyPerServing:'',energyUnit:'kcal',proteinPerServing:'',fatPerServing:'',carbsPerServing:'',fiberPerServing:'',sodiumPerServing:''},
     actualAmount:'', actualResult:null,
   },
   onLoad(){

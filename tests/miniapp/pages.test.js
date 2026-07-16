@@ -81,6 +81,7 @@ test('all mini program pages initialize with local data only', () => {
 test('custom food form keeps category internal instead of asking the user', () => {
   const source=fs.readFileSync(path.resolve(__dirname,'../../miniprogram/pages/custom-food/custom-food.wxml'),'utf8');
   assert.equal(source.includes('膳食类别'),false);
+  assert.equal(source.includes('拼音首字母'),false);
   createRuntime();
   const page=loadPage('custom-food');
   page.onLoad();
