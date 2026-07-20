@@ -53,7 +53,7 @@ test('version one default theme migrates to follow system', () => {
   wx.setStorageSync('userSettings', {targets:{calories:1800},theme:'light'});
   const storage = require('../../miniprogram/utils/storage');
   storage.initialize();
-  assert.equal(wx.getStorageSync('localSchemaVersion'), 6);
+  assert.equal(wx.getStorageSync('localSchemaVersion'), 7);
   assert.deepEqual(wx.getStorageSync('mealTemplates'), []);
   assert.deepEqual(wx.getStorageSync('favoriteFoods'), []);
   assert.equal(wx.getStorageSync('userSettings').theme, 'system');

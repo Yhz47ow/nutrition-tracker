@@ -70,7 +70,7 @@ test('all mini program pages initialize with local data only', () => {
 
   runtime.app.globalData.pendingFood = require('../../miniprogram/utils/foods')[0];
   runtime.app.globalData.pendingDish = require('../../miniprogram/data/dishDatabase')[0];
-  for (const name of ['food-entry','dish-entry','custom-food','meal-form','exercise-form','training']) {
+  for (const name of ['food-entry','dish-entry','custom-food','meal-form','nutrition-plan','exercise-form','training']) {
     const page = loadPage(name);
     page.onLoad();
     assert.ok(page.data, `${name} initialized`);

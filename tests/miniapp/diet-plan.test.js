@@ -30,3 +30,10 @@ test('legacy settings initialize both day profiles from the default target',()=>
   assert.deepEqual(normalized.training,{calories:1900,carbs:210,protein:130,fat:60});
   assert.deepEqual(normalized.rest,{calories:1900,carbs:210,protein:130,fat:60});
 });
+
+test('cycle and today override take priority over workout day targets',()=>{
+  const withCycle=Object.assign({},settings,{nutritionCycle:{enabled:true,cycle:{startDate:'2026-07-20',cycleLength:1,repeat:true,days:[{calories:2100,carbs:50,protein:25,fat:25}]},overrides:{}}});
+  assert.equal(dietPlan.resolveTargets(withCycle,[{date:'2026-07-20',dayType:'rest'}],'2026-07-20').targets.calories,2100);
+  withCycle.nutritionCycle.overrides['2026-07-20']={calories:1950,carbs:40,protein:35,fat:25};
+  assert.equal(dietPlan.resolveTargets(withCycle,[],'2026-07-20').label,'今日自定义目标');
+});

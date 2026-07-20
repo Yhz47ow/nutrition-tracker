@@ -20,6 +20,7 @@
       <view class="target-profile-head"><view><view class="strong">休息日目标</view><view class="small muted">日历标记为休息日时采用</view></view><text class="day-badge rest-badge">休</text></view>
       <view class="form-grid"><view class="field"><text class="field-label">热量 kcal</text><input class="input" type="digit" value="{{nutritionPlan.rest.calories}}" data-day="rest" data-field="calories" bindinput="inputPlanTarget"/></view><view class="field"><text class="field-label">碳水 g</text><input class="input" type="digit" value="{{nutritionPlan.rest.carbs}}" data-day="rest" data-field="carbs" bindinput="inputPlanTarget"/></view><view class="field"><text class="field-label">蛋白质 g</text><input class="input" type="digit" value="{{nutritionPlan.rest.protein}}" data-day="rest" data-field="protein" bindinput="inputPlanTarget"/></view><view class="field"><text class="field-label">脂肪 g</text><input class="input" type="digit" value="{{nutritionPlan.rest.fat}}" data-day="rest" data-field="fat" bindinput="inputPlanTarget"/></view></view>
     </view>
+    <button class="btn btn-secondary nutrition-plan-entry" bindtap="openNutritionPlan">编辑周期饮食计划</button>
   </view>
 
   <view class="section">

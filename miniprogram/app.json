@@ -10,7 +10,8 @@
     "pages/meal-form/meal-form",
     "pages/training/training",
     "pages/exercise-form/exercise-form",
-    "pages/settings/settings"
+    "pages/settings/settings",
+    "pages/nutrition-plan/nutrition-plan"
   ],
   "window": {
     "navigationBarBackgroundColor": "#1E1E1E",

@@ -1,6 +1,7 @@
 'use strict';
 
 const workoutPlan=require('./workout-plan');
+const nutritionCycle=require('./nutrition-cycle');
 
 const BASE_TARGETS=Object.freeze({calories:1600,carbs:160,protein:120,fat:44});
 const DEFAULT_NUTRITION_PLAN=Object.freeze({
@@ -34,6 +35,8 @@ function resolveTargets(settings,plans,date) {
   const fallback=normalizeTargets(safeSettings.targets,BASE_TARGETS);
   const plan=workoutPlan.findPlan(plans,date);
   const nutrition=normalizeNutritionPlan(safeSettings.nutritionPlan,fallback);
+  const cycleResult=nutritionCycle.resolve(safeSettings.nutritionCycle,date);
+  if(cycleResult)return {targets:cycleResult.targets,dayType:'cycle',label:cycleResult.source==='override'?'今日自定义目标':`周期第${cycleResult.cycleDay.index}天`,plan:null,source:cycleResult.source};
   if(plan&&plan.dayType==='training')return {targets:nutrition.training,dayType:'training',label:'训练日目标',plan};
   if(plan&&plan.dayType==='rest')return {targets:nutrition.rest,dayType:'rest',label:'休息日目标',plan};
   return {targets:fallback,dayType:'default',label:'默认目标',plan:null};
