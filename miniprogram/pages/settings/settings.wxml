@@ -1,6 +1,6 @@
 <view class="page {{themeClass}}">
   <view class="section">
-    <view class="section-title">每日营养目标</view>
+    <view class="section-title">默认营养目标</view>
     <view class="form-grid">
       <view class="field"><text class="field-label">热量 kcal</text><input class="input" type="digit" value="{{targets.calories}}" data-field="calories" bindinput="inputTarget"/></view>
       <view class="field"><text class="field-label">碳水 g</text><input class="input" type="digit" value="{{targets.carbs}}" data-field="carbs" bindinput="inputTarget"/></view>
@@ -8,6 +8,18 @@
       <view class="field"><text class="field-label">脂肪 g</text><input class="input" type="digit" value="{{targets.fat}}" data-field="fat" bindinput="inputTarget"/></view>
     </view>
     <view class="preset-row"><button class="preset-button {{selectedPreset==='fatloss'?'active':''}}" data-mode="fatloss" bindtap="preset"><text>减脂</text><text class="preset-ratio">碳40% · 蛋35% · 脂25%</text></button><button class="preset-button {{selectedPreset==='balanced'?'active':''}}" data-mode="balanced" bindtap="preset"><text>均衡</text><text class="preset-ratio">碳50% · 蛋25% · 脂25%</text></button></view>
+  </view>
+
+  <view class="section">
+    <view class="section-title">训练日与休息日</view>
+    <view class="target-profile training-profile">
+      <view class="target-profile-head"><view><view class="strong">训练日目标</view><view class="small muted">日历标记为训练日时采用</view></view><text class="day-badge training-badge">训</text></view>
+      <view class="form-grid"><view class="field"><text class="field-label">热量 kcal</text><input class="input" type="digit" value="{{nutritionPlan.training.calories}}" data-day="training" data-field="calories" bindinput="inputPlanTarget"/></view><view class="field"><text class="field-label">碳水 g</text><input class="input" type="digit" value="{{nutritionPlan.training.carbs}}" data-day="training" data-field="carbs" bindinput="inputPlanTarget"/></view><view class="field"><text class="field-label">蛋白质 g</text><input class="input" type="digit" value="{{nutritionPlan.training.protein}}" data-day="training" data-field="protein" bindinput="inputPlanTarget"/></view><view class="field"><text class="field-label">脂肪 g</text><input class="input" type="digit" value="{{nutritionPlan.training.fat}}" data-day="training" data-field="fat" bindinput="inputPlanTarget"/></view></view>
+    </view>
+    <view class="target-profile rest-profile">
+      <view class="target-profile-head"><view><view class="strong">休息日目标</view><view class="small muted">日历标记为休息日时采用</view></view><text class="day-badge rest-badge">休</text></view>
+      <view class="form-grid"><view class="field"><text class="field-label">热量 kcal</text><input class="input" type="digit" value="{{nutritionPlan.rest.calories}}" data-day="rest" data-field="calories" bindinput="inputPlanTarget"/></view><view class="field"><text class="field-label">碳水 g</text><input class="input" type="digit" value="{{nutritionPlan.rest.carbs}}" data-day="rest" data-field="carbs" bindinput="inputPlanTarget"/></view><view class="field"><text class="field-label">蛋白质 g</text><input class="input" type="digit" value="{{nutritionPlan.rest.protein}}" data-day="rest" data-field="protein" bindinput="inputPlanTarget"/></view><view class="field"><text class="field-label">脂肪 g</text><input class="input" type="digit" value="{{nutritionPlan.rest.fat}}" data-day="rest" data-field="fat" bindinput="inputPlanTarget"/></view></view>
+    </view>
   </view>
 
   <view class="section">

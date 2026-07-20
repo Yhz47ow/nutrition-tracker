@@ -26,6 +26,7 @@ test('initialization creates plain local storage collections', () => {
   assert.equal(wx.getStorageSync('userSettings').targets.protein, 120);
   assert.equal(wx.getStorageSync('userSettings').theme, 'system');
   assert.deepEqual(wx.getStorageSync('userSettings').profile, {sex:'',age:'',heightCm:'',weightKg:''});
+  assert.equal(wx.getStorageSync('userSettings').nutritionPlan.training.calories,1600);
 });
 
 test('theme preference supports system, dark and light modes', () => {
@@ -52,7 +53,7 @@ test('version one default theme migrates to follow system', () => {
   wx.setStorageSync('userSettings', {targets:{calories:1800},theme:'light'});
   const storage = require('../../miniprogram/utils/storage');
   storage.initialize();
-  assert.equal(wx.getStorageSync('localSchemaVersion'), 5);
+  assert.equal(wx.getStorageSync('localSchemaVersion'), 6);
   assert.deepEqual(wx.getStorageSync('mealTemplates'), []);
   assert.deepEqual(wx.getStorageSync('favoriteFoods'), []);
   assert.equal(wx.getStorageSync('userSettings').theme, 'system');
@@ -72,6 +73,7 @@ test('legacy PWA backup imports without replacing current records', () => {
     records: {'2026-07-15': {breakfast:[{id:'imported',foodName:'牛奶'}],lunch:[],dinner:[],snack:[]}},
     customFoods: [{id:'custom-1',name:'测试食物'}],
     targets: {calories: 2000},
+    userSettings: {targets:{calories:2000},nutritionPlan:{training:{calories:2300,carbs:280,protein:150,fat:64},rest:{calories:1800,carbs:170,protein:150,fat:58}}},
     workouts: [{id:'workout-1',date:'2026-07-15'}],
     workoutPlans: [{id:'plan_2026-07-16',date:'2026-07-16',dayType:'training',title:'腿部'}],
     customExercises: [{id:'exercise-1',name:'测试动作'}],
@@ -82,6 +84,7 @@ test('legacy PWA backup imports without replacing current records', () => {
   assert.equal(backup.dietRecords['2026-07-15'].breakfast.length, 2);
   assert.equal(backup.customFoods[0].id, 'custom-1');
   assert.equal(backup.userSettings.targets.calories, 2000);
+  assert.equal(backup.userSettings.nutritionPlan.training.calories,2300);
   assert.equal(backup.workoutHistory[0].id, 'workout-1');
   assert.equal(backup.workoutPlans[0].title, '腿部');
   assert.equal(backup.exerciseLibrary[0].id, 'exercise-1');

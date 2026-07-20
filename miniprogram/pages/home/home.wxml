@@ -20,7 +20,7 @@
     <view class="summary-tile"><text class="tile-label">总热量</text><view><text class="tile-value">{{summary.totals.calories}}</text><text class="tile-unit"> kcal</text></view><view class="progress"><view class="progress-fill" style="width:{{summary.percentages.calories}}%"></view></view></view>
     <view class="summary-tile"><text class="tile-label">总重量</text><view><text class="tile-value">{{summary.totals.weight}}</text><text class="tile-unit"> g</text></view><text class="tile-sub">{{summary.totals.mealCount}} 餐</text></view>
     <view class="summary-tile"><text class="tile-label">距上餐</text><view><text class="tile-value">{{summary.fasting.value}}</text><text class="tile-unit"> h</text></view><text class="tile-sub">{{summary.fasting.label}}</text></view>
-    <view class="summary-tile"><text class="tile-label">剩余热量</text><view><text class="tile-value">{{summary.remaining.calories > 0 ? summary.remaining.calories : 0}}</text><text class="tile-unit"> kcal</text></view><text class="tile-sub">目标 {{summary.targets.calories}}</text></view>
+    <view class="summary-tile"><text class="tile-label">剩余热量</text><view><text class="tile-value">{{summary.remaining.calories > 0 ? summary.remaining.calories : 0}}</text><text class="tile-unit"> kcal</text></view><text class="tile-sub">{{targetMode.label}} · {{summary.targets.calories}}</text></view>
   </view>
 
   <view class="card workout-card" bindtap="startWorkout">

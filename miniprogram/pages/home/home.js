@@ -1,5 +1,6 @@
 const storage = require('../../utils/storage');
 const diet = require('../../utils/diet');
+const dietPlan = require('../../utils/diet-plan');
 const dates = require('../../utils/date');
 const workoutData = require('../../utils/workout-data');
 const media = require('../../utils/media');
@@ -10,6 +11,7 @@ Page({
     themeClass: '',
     currentDate: dates.dateKey(Date.now()),
     summary: null,
+    targetMode: {dayType:'default',label:'默认目标'},
     recommendations: [],
     recentWorkout: null,
     activeWorkout: null,
@@ -23,10 +25,12 @@ Page({
   refresh() {
     const state = storage.getDietState();
     const workout = workoutData.load();
-    const summary = diet.summarize(state.records, this.data.currentDate, state.settings.targets);
+    const targetMode=dietPlan.resolveTargets(state.settings,workout.plans,this.data.currentDate);
+    const summary = diet.summarize(state.records, this.data.currentDate, targetMode.targets);
     const latest = [...workout.workouts].sort((a, b) => b.startedAt - a.startedAt)[0];
     this.setData({
       summary,
+      targetMode,
       recommendations: diet.recommendations(summary, state.customFoods),
       activeWorkout: workout.activeWorkout ? {
         parts: workoutData.workoutParts(workout.activeWorkout),

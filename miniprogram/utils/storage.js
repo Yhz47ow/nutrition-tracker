@@ -1,6 +1,7 @@
 'use strict';
 
 const health = require('./health');
+const dietPlan = require('./diet-plan');
 
 const KEYS = Object.freeze({
   schemaVersion: 'localSchemaVersion',
@@ -18,6 +19,7 @@ const KEYS = Object.freeze({
 
 const DEFAULT_SETTINGS = Object.freeze({
   targets: { calories: 1600, carbs: 160, protein: 120, fat: 44 },
+  nutritionPlan: dietPlan.DEFAULT_NUTRITION_PLAN,
   theme: 'system',
   profile: health.DEFAULT_PROFILE,
 });
@@ -60,6 +62,7 @@ function initialize() {
   }
   const settings = read(KEYS.userSettings, DEFAULT_SETTINGS);
   settings.targets = Object.assign({}, DEFAULT_SETTINGS.targets, settings.targets || {});
+  settings.nutritionPlan = dietPlan.normalizeNutritionPlan(settings.nutritionPlan, settings.targets);
   settings.profile = health.normalizeProfile(settings.profile);
   settings.theme = version < 2
     ? (settings.theme === 'dark' ? 'dark' : 'system')
@@ -75,7 +78,10 @@ function initialize() {
     const workoutPlans=read(KEYS.workoutPlans,[]);
     write(KEYS.workoutPlans,Array.isArray(workoutPlans)?workoutPlans:[]);
   }
-  write(KEYS.schemaVersion, 5);
+  if (version < 6) {
+    write(KEYS.userSettings, settings);
+  }
+  write(KEYS.schemaVersion, 6);
 }
 
 function getDietState() {
@@ -141,7 +147,7 @@ function createBackup() {
   const diet = getDietState();
   const workout = getWorkoutState();
   return {
-    version: 7,
+    version: 8,
     platform: 'wechat-mini-program',
     exportedAt: new Date().toISOString(),
     dietRecords: diet.records,
@@ -170,6 +176,7 @@ function importBackup(payload) {
 
   const settings = Object.assign({}, currentDiet.settings, incomingSettings);
   settings.targets = Object.assign({}, DEFAULT_SETTINGS.targets, currentDiet.settings.targets || {}, incomingSettings.targets || {});
+  settings.nutritionPlan = dietPlan.normalizeNutritionPlan(incomingSettings.nutritionPlan || currentDiet.settings.nutritionPlan, settings.targets);
   settings.profile = health.normalizeProfile(incomingSettings.profile || currentDiet.settings.profile);
   settings.theme = ['system', 'dark', 'light'].includes(settings.theme) ? settings.theme : 'system';
   saveDietState({

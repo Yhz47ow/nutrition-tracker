@@ -3,6 +3,7 @@ const theme = require('../../utils/theme');
 const media = require('../../utils/media');
 const dataIo = require('../../utils/data-io');
 const health = require('../../utils/health');
+const dietPlan = require('../../utils/diet-plan');
 
 Page({
   data: {
@@ -11,6 +12,7 @@ Page({
     profile: health.DEFAULT_PROFILE,
     bmr: null,
     selectedPreset: '',
+    nutritionPlan: dietPlan.DEFAULT_NUTRITION_PLAN,
     theme: 'system',
     themeOptions: [
       { value: 'system', label: '跟随系统' },
@@ -22,11 +24,17 @@ Page({
   onShow() {
     const state = storage.getDietState();
     const profile = health.normalizeProfile(state.settings.profile);
-    this.setData({ themeClass: theme.apply(), targets: state.settings.targets, selectedPreset:health.detectMacroPreset(state.settings.targets), profile, bmr: health.calculateBmr(profile), theme: state.settings.theme });
+    this.setData({ themeClass: theme.apply(), targets: state.settings.targets, nutritionPlan:dietPlan.normalizeNutritionPlan(state.settings.nutritionPlan,state.settings.targets), selectedPreset:health.detectMacroPreset(state.settings.targets), profile, bmr: health.calculateBmr(profile), theme: state.settings.theme });
   },
 
   inputTarget(event) {
     this.setData({ [`targets.${event.currentTarget.dataset.field}`]: event.detail.value, selectedPreset:'' });
+  },
+
+  inputPlanTarget(event) {
+    const day=event.currentTarget.dataset.day;const field=event.currentTarget.dataset.field;
+    if(day!=='training'&&day!=='rest')return;
+    this.setData({[`nutritionPlan.${day}.${field}`]:event.detail.value});
   },
 
   inputProfile(event) {
@@ -63,6 +71,7 @@ Page({
       protein: Math.max(0, Number(this.data.targets.protein) || 0),
       fat: Math.max(0, Number(this.data.targets.fat) || 0),
     };
+    state.settings.nutritionPlan=dietPlan.normalizeNutritionPlan(this.data.nutritionPlan,state.settings.targets);
     state.settings.theme = this.data.theme;
     state.settings.profile = health.normalizeProfile(this.data.profile);
     storage.saveDietState(state);
