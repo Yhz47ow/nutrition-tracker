@@ -95,4 +95,6 @@ test('home owns the nutrition plan entry and uses the centered compact heading',
   assert.equal(home.includes('营养与训练追踪'),true);
   assert.equal(home.includes('bindtap="openNutritionPlan"'),true);
   assert.equal(settings.includes('编辑周期饮食计划'),false);
+  assert.equal(settings.includes('默认营养目标'),false);
+  assert.equal(settings.includes('训练日与休息日'),false);
 });
