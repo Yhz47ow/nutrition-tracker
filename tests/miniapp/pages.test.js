@@ -87,3 +87,12 @@ test('custom food form keeps category internal instead of asking the user', () =
   page.onLoad();
   assert.equal(page.data.form.category,'other');
 });
+
+test('home owns the nutrition plan entry and uses the centered compact heading',()=>{
+  const home=fs.readFileSync(path.resolve(__dirname,'../../miniprogram/pages/home/home.wxml'),'utf8');
+  const settings=fs.readFileSync(path.resolve(__dirname,'../../miniprogram/pages/settings/settings.wxml'),'utf8');
+  assert.equal(home.includes('今日概览'),false);
+  assert.equal(home.includes('营养与训练追踪'),true);
+  assert.equal(home.includes('bindtap="openNutritionPlan"'),true);
+  assert.equal(settings.includes('编辑周期饮食计划'),false);
+});

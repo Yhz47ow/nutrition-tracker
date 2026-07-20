@@ -1,10 +1,14 @@
 <view class="page {{themeClass}}" wx:if="{{summary}}">
-  <view class="top-actions">
-    <view>
-      <view class="eyebrow">营养与训练追踪</view>
-      <view class="page-heading">今日概览</view>
-    </view>
+  <view class="home-header">
     <button class="btn-icon btn-secondary settings" bindtap="openSettings">⚙</button>
+    <view class="page-heading">营养与训练追踪</view>
+    <view class="header-spacer"></view>
+  </view>
+
+  <view class="plan-entry" bindtap="openNutritionPlan">
+    <view class="plan-entry-mark">计</view>
+    <view class="grow"><view class="strong">饮食计划</view><view class="small muted">{{targetMode.label}}</view></view>
+    <text class="plan-entry-go">›</text>
   </view>
 
   <view class="date-nav">

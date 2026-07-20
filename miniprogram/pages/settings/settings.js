@@ -49,8 +49,6 @@ Page({
     this.setData({ bmr: health.calculateBmr(this.data.profile) });
   },
 
-  openNutritionPlan() { wx.navigateTo({url:'/pages/nutrition-plan/nutrition-plan'}); },
-
   preset(event) {
     const mode=event.currentTarget.dataset.mode==='fatloss'?'fatloss':'balanced';
     const targets=health.macroTargetsForPreset(this.data.targets.calories,mode);

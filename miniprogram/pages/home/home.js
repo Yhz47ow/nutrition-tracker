@@ -61,6 +61,8 @@ Page({
 
   openSettings() { wx.navigateTo({ url: '/pages/settings/settings' }); },
 
+  openNutritionPlan() { wx.navigateTo({ url: '/pages/nutrition-plan/nutrition-plan' }); },
+
   startWorkout() { wx.navigateTo({ url: '/pages/training/training' }); },
 
   addFood(event) {
