@@ -10,6 +10,7 @@ const KEYS = Object.freeze({
   favoriteFoods: 'favoriteFoods',
   userSettings: 'userSettings',
   workoutHistory: 'workoutHistory',
+  workoutPlans: 'workoutPlans',
   exerciseLibrary: 'exerciseLibrary',
   activeWorkout: 'activeWorkout',
   restTimer: 'restTimer',
@@ -52,6 +53,7 @@ function initialize() {
     write(KEYS.favoriteFoods, []);
     write(KEYS.userSettings, clone(DEFAULT_SETTINGS));
     write(KEYS.workoutHistory, []);
+    write(KEYS.workoutPlans, []);
     write(KEYS.exerciseLibrary, []);
     write(KEYS.schemaVersion, 1);
     version = 1;
@@ -69,7 +71,11 @@ function initialize() {
     write(KEYS.mealTemplates, Array.isArray(mealTemplates) ? mealTemplates : []);
     write(KEYS.favoriteFoods, Array.isArray(favoriteFoods) ? favoriteFoods : []);
   }
-  write(KEYS.schemaVersion, 4);
+  if (version < 5) {
+    const workoutPlans=read(KEYS.workoutPlans,[]);
+    write(KEYS.workoutPlans,Array.isArray(workoutPlans)?workoutPlans:[]);
+  }
+  write(KEYS.schemaVersion, 5);
 }
 
 function getDietState() {
@@ -93,6 +99,7 @@ function saveDietState(state) {
 function getWorkoutState() {
   return {
     workouts: read(KEYS.workoutHistory, []),
+    plans: read(KEYS.workoutPlans, []),
     customExercises: read(KEYS.exerciseLibrary, []),
     activeWorkout: read(KEYS.activeWorkout, null),
     restTimer: read(KEYS.restTimer, null),
@@ -101,6 +108,7 @@ function getWorkoutState() {
 
 function saveWorkoutState(state) {
   write(KEYS.workoutHistory, state.workouts || []);
+  write(KEYS.workoutPlans, state.plans || []);
   write(KEYS.exerciseLibrary, state.customExercises || []);
   if (state.activeWorkout) write(KEYS.activeWorkout, state.activeWorkout);
   else remove(KEYS.activeWorkout);
@@ -133,7 +141,7 @@ function createBackup() {
   const diet = getDietState();
   const workout = getWorkoutState();
   return {
-    version: 6,
+    version: 7,
     platform: 'wechat-mini-program',
     exportedAt: new Date().toISOString(),
     dietRecords: diet.records,
@@ -142,6 +150,7 @@ function createBackup() {
     favoriteFoods: diet.favoriteFoods,
     userSettings: diet.settings,
     workoutHistory: workout.workouts,
+    workoutPlans: workout.plans,
     exerciseLibrary: workout.customExercises,
     activeWorkout: workout.activeWorkout,
     restTimer: workout.restTimer,
@@ -156,6 +165,7 @@ function importBackup(payload) {
   const incomingRecords = payload.dietRecords || payload.records || {};
   const incomingSettings = payload.userSettings || (payload.targets ? { targets: payload.targets } : {});
   const incomingWorkouts = payload.workoutHistory || payload.workouts || [];
+  const incomingPlans = payload.workoutPlans || payload.plans || [];
   const incomingExercises = payload.exerciseLibrary || payload.customExercises || [];
 
   const settings = Object.assign({}, currentDiet.settings, incomingSettings);
@@ -171,6 +181,7 @@ function importBackup(payload) {
   });
   saveWorkoutState({
     workouts: mergeById(currentWorkout.workouts, incomingWorkouts),
+    plans: mergeById(currentWorkout.plans, incomingPlans),
     customExercises: mergeById(currentWorkout.customExercises, incomingExercises),
     activeWorkout: currentWorkout.activeWorkout || payload.activeWorkout || null,
     restTimer: currentWorkout.restTimer || payload.restTimer || null,

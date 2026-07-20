@@ -2,6 +2,7 @@
 
 const Core = require('./workout-core');
 const storage = require('./storage');
+const workoutPlan = require('./workout-plan');
 
 const BODY_PARTS = ['全部', '胸部', '背部', '腿部', '肩部', '手臂', '核心', '其他'];
 const BODY_PART_SHORT = { 胸部:'胸', 背部:'背', 腿部:'腿', 肩部:'肩', 手臂:'臂', 核心:'核', 其他:'其' };
@@ -45,6 +46,7 @@ function load() {
   const raw = storage.getWorkoutState();
   return {
     workouts: (raw.workouts || []).map(Core.normalizeWorkout),
+    plans: workoutPlan.normalizePlans(raw.plans),
     customExercises: (raw.customExercises || []).map(Core.normalizeCustomExercise).filter(item => item.name),
     activeWorkout: raw.activeWorkout ? Core.normalizeWorkout(raw.activeWorkout) : null,
     restTimer: Core.normalizeTimer(raw.restTimer),
@@ -54,6 +56,7 @@ function load() {
 function save(state) {
   storage.saveWorkoutState({
     workouts: (state.workouts || []).map(Core.normalizeWorkout),
+    plans: workoutPlan.normalizePlans(state.plans),
     customExercises: (state.customExercises || []).map(Core.normalizeCustomExercise),
     activeWorkout: state.activeWorkout ? Core.normalizeWorkout(state.activeWorkout) : null,
     restTimer: Core.normalizeTimer(state.restTimer),

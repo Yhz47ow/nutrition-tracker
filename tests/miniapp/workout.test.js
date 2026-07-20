@@ -39,3 +39,24 @@ test('active workout and timestamp timer survive storage reload', () => {
   assert.equal(restored.activeWorkout.exercises[0].exerciseName, '杠铃卧推');
   assert.equal(workout.Core.getRemainingMs(restored.restTimer, 32000), 60000);
 });
+
+test('manual workout plans persist and render training, rest and completed days', () => {
+  global.wx = createWxMock();
+  const storage = require('../../miniprogram/utils/storage');
+  const workout = require('../../miniprogram/utils/workout-data');
+  const plans = require('../../miniprogram/utils/workout-plan');
+  storage.initialize();
+  const state=workout.load();
+  state.plans=plans.savePlan(state.plans,{date:'2026-07-20',dayType:'training',title:'腿部',details:'深蹲 4x8',note:''});
+  state.plans=plans.savePlan(state.plans,{date:'2026-07-21',dayType:'rest',note:'拉伸'});
+  state.workouts=[{id:'done',date:'2026-07-20',startedAt:1,duration:60,exercises:[]}];
+  workout.save(state);
+  const restored=workout.load();
+  assert.equal(restored.plans.length,2);
+  assert.equal(plans.findPlan(restored.plans,'2026-07-20').details,'深蹲 4x8');
+  const calendar=plans.monthCalendar('2026-07','2026-07-20',restored.plans,restored.workouts);
+  assert.equal(calendar.find(item=>item.key==='2026-07-20').completed,true);
+  assert.equal(calendar.find(item=>item.key==='2026-07-21').dayType,'rest');
+  restored.plans=plans.deletePlan(restored.plans,'2026-07-21');
+  assert.equal(restored.plans.length,1);
+});

@@ -19,6 +19,7 @@ test('initialization creates plain local storage collections', () => {
   storage.initialize();
   assert.deepEqual(wx.getStorageSync('dietRecords'), {});
   assert.deepEqual(wx.getStorageSync('workoutHistory'), []);
+  assert.deepEqual(wx.getStorageSync('workoutPlans'), []);
   assert.deepEqual(wx.getStorageSync('exerciseLibrary'), []);
   assert.deepEqual(wx.getStorageSync('mealTemplates'), []);
   assert.deepEqual(wx.getStorageSync('favoriteFoods'), []);
@@ -51,7 +52,7 @@ test('version one default theme migrates to follow system', () => {
   wx.setStorageSync('userSettings', {targets:{calories:1800},theme:'light'});
   const storage = require('../../miniprogram/utils/storage');
   storage.initialize();
-  assert.equal(wx.getStorageSync('localSchemaVersion'), 4);
+  assert.equal(wx.getStorageSync('localSchemaVersion'), 5);
   assert.deepEqual(wx.getStorageSync('mealTemplates'), []);
   assert.deepEqual(wx.getStorageSync('favoriteFoods'), []);
   assert.equal(wx.getStorageSync('userSettings').theme, 'system');
@@ -72,6 +73,7 @@ test('legacy PWA backup imports without replacing current records', () => {
     customFoods: [{id:'custom-1',name:'测试食物'}],
     targets: {calories: 2000},
     workouts: [{id:'workout-1',date:'2026-07-15'}],
+    workoutPlans: [{id:'plan_2026-07-16',date:'2026-07-16',dayType:'training',title:'腿部'}],
     customExercises: [{id:'exercise-1',name:'测试动作'}],
     mealTemplates: [{id:'meal-1',name:'早餐套餐',components:[]}],
     favoriteFoods: ['b-rice'],
@@ -81,6 +83,7 @@ test('legacy PWA backup imports without replacing current records', () => {
   assert.equal(backup.customFoods[0].id, 'custom-1');
   assert.equal(backup.userSettings.targets.calories, 2000);
   assert.equal(backup.workoutHistory[0].id, 'workout-1');
+  assert.equal(backup.workoutPlans[0].title, '腿部');
   assert.equal(backup.exerciseLibrary[0].id, 'exercise-1');
   assert.equal(backup.mealTemplates[0].id, 'meal-1');
   assert.deepEqual(backup.favoriteFoods, ['b-rice']);

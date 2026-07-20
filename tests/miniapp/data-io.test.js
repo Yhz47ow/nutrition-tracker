@@ -38,6 +38,9 @@ test('backup exports to chat and can be selected for import', async () => {
   diet.favoriteFoods = ['b-egg'];
   diet.mealTemplates = [{id:'meal-1',name:'早餐',components:[]}];
   storage.saveDietState(diet);
+  const workout=storage.getWorkoutState();
+  workout.plans=[{id:'plan_2026-07-16',date:'2026-07-16',dayType:'rest',title:'',details:'',note:'恢复'}];
+  storage.saveWorkoutState(workout);
 
   const exported = await dataIo.exportToChat();
   assert.match(exported.fileName, /^食练记备份-\d{4}-\d{2}-\d{2}\.json$/);
@@ -47,6 +50,7 @@ test('backup exports to chat and can be selected for import', async () => {
   assert.equal(parsed.userSettings.profile.heightCm, 175);
   assert.deepEqual(parsed.favoriteFoods, ['b-egg']);
   assert.equal(parsed.mealTemplates[0].id, 'meal-1');
+  assert.equal(parsed.workoutPlans[0].dayType, 'rest');
 
   const imported = await dataIo.importFromChat();
   assert.equal(imported.payload.dietRecords['2026-07-16'].breakfast[0].id, 'egg');
