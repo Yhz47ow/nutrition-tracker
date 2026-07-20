@@ -27,4 +27,29 @@ function calculateBmr(profile) {
   return Math.round(10 * weight + 6.25 * height - 5 * age + offset);
 }
 
-module.exports = { DEFAULT_PROFILE, normalizeProfile, calculateBmr };
+const MACRO_PRESETS = Object.freeze({
+  fatloss: Object.freeze({ carbs:0.40, protein:0.35, fat:0.25 }),
+  balanced: Object.freeze({ carbs:0.50, protein:0.25, fat:0.25 }),
+});
+
+function macroTargetsForPreset(calories, mode) {
+  const energy=Math.max(1,Number(calories)||1600);
+  const ratios=MACRO_PRESETS[mode]||MACRO_PRESETS.balanced;
+  return {
+    calories:Math.round(energy),
+    carbs:Math.round(energy*ratios.carbs/4),
+    protein:Math.round(energy*ratios.protein/4),
+    fat:Math.round(energy*ratios.fat/9),
+  };
+}
+
+function detectMacroPreset(targets) {
+  const source=targets||{};
+  for(const mode of Object.keys(MACRO_PRESETS)) {
+    const expected=macroTargetsForPreset(source.calories,mode);
+    if(['carbs','protein','fat'].every(key=>Math.abs(Number(source[key])-expected[key])<=1))return mode;
+  }
+  return '';
+}
+
+module.exports = { DEFAULT_PROFILE, MACRO_PRESETS, normalizeProfile, calculateBmr, macroTargetsForPreset, detectMacroPreset };

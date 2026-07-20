@@ -7,7 +7,7 @@
       <view class="field"><text class="field-label">蛋白质 g</text><input class="input" type="digit" value="{{targets.protein}}" data-field="protein" bindinput="inputTarget"/></view>
       <view class="field"><text class="field-label">脂肪 g</text><input class="input" type="digit" value="{{targets.fat}}" data-field="fat" bindinput="inputTarget"/></view>
     </view>
-    <view class="preset-row"><button class="btn btn-small btn-secondary" data-mode="fatloss" bindtap="preset">减脂比例</button><button class="btn btn-small btn-secondary" data-mode="balanced" bindtap="preset">均衡比例</button></view>
+    <view class="preset-row"><button class="preset-button {{selectedPreset==='fatloss'?'active':''}}" data-mode="fatloss" bindtap="preset"><text>减脂</text><text class="preset-ratio">碳40% · 蛋35% · 脂25%</text></button><button class="preset-button {{selectedPreset==='balanced'?'active':''}}" data-mode="balanced" bindtap="preset"><text>均衡</text><text class="preset-ratio">碳50% · 蛋25% · 脂25%</text></button></view>
   </view>
 
   <view class="section">

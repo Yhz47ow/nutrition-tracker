@@ -10,6 +10,7 @@ Page({
     targets: {},
     profile: health.DEFAULT_PROFILE,
     bmr: null,
+    selectedPreset: '',
     theme: 'system',
     themeOptions: [
       { value: 'system', label: '跟随系统' },
@@ -21,11 +22,11 @@ Page({
   onShow() {
     const state = storage.getDietState();
     const profile = health.normalizeProfile(state.settings.profile);
-    this.setData({ themeClass: theme.apply(), targets: state.settings.targets, profile, bmr: health.calculateBmr(profile), theme: state.settings.theme });
+    this.setData({ themeClass: theme.apply(), targets: state.settings.targets, selectedPreset:health.detectMacroPreset(state.settings.targets), profile, bmr: health.calculateBmr(profile), theme: state.settings.theme });
   },
 
   inputTarget(event) {
-    this.setData({ [`targets.${event.currentTarget.dataset.field}`]: event.detail.value });
+    this.setData({ [`targets.${event.currentTarget.dataset.field}`]: event.detail.value, selectedPreset:'' });
   },
 
   inputProfile(event) {
@@ -41,13 +42,9 @@ Page({
   },
 
   preset(event) {
-    const calories = Math.max(1, Number(this.data.targets.calories) || 1600);
-    const ratios = event.currentTarget.dataset.mode === 'fatloss' ? [.4, .35, .25] : [.5, .25, .25];
-    this.setData({
-      'targets.carbs': Math.round(calories * ratios[0] / 4),
-      'targets.protein': Math.round(calories * ratios[1] / 4),
-      'targets.fat': Math.round(calories * ratios[2] / 9),
-    });
+    const mode=event.currentTarget.dataset.mode==='fatloss'?'fatloss':'balanced';
+    const targets=health.macroTargetsForPreset(this.data.targets.calories,mode);
+    this.setData({targets,selectedPreset:mode},()=>this.persistSettings(mode==='fatloss'?'已应用减脂比例':'已应用均衡比例'));
   },
 
   selectTheme(event) {
@@ -55,6 +52,10 @@ Page({
   },
 
   save() {
+    this.persistSettings('设置已保存');
+  },
+
+  persistSettings(message) {
     const state = storage.getDietState();
     state.settings.targets = {
       calories: Math.max(1, Number(this.data.targets.calories) || 1600),
@@ -66,7 +67,7 @@ Page({
     state.settings.profile = health.normalizeProfile(this.data.profile);
     storage.saveDietState(state);
     this.setData({ themeClass: theme.apply(), profile: state.settings.profile, bmr: health.calculateBmr(state.settings.profile) });
-    wx.showToast({ title: '设置已保存', icon: 'success' });
+    wx.showToast({ title: message||'设置已保存', icon: 'success' });
   },
 
   async exportBackup() {
