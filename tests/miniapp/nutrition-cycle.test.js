@@ -24,22 +24,24 @@ test('single-run cycle stops after its configured length',()=>{
 });
 
 test('532 taper keeps protein and fat stable while reducing only carbs',()=>{
-  const result=cycle.generate532Taper({startCalories:2000,stageDays:7,stageCount:4,carbDrop:20});
+  const result=cycle.generate532Taper({startCalories:2000,stageCount:12,carbDrop:10});
   assert.equal(result.error,undefined);
-  assert.equal(result.cycleLength,28);
-  assert.equal(result.days.length,28);
+  assert.equal(result.cycleLength,84);
+  assert.equal(result.days.length,84);
   assert.deepEqual(result.baseTargets,{carbs:250,protein:150,fat:44.4});
-  assert.deepEqual(result.lastTargets,{carbs:190,protein:150,fat:44.4});
+  assert.deepEqual(result.lastTargets,{carbs:140,protein:150,fat:44.4});
   const first=cycle.macroTargets(result.days[0].calories,result.days[0]);
-  const last=cycle.macroTargets(result.days[27].calories,result.days[27]);
+  const last=cycle.macroTargets(result.days[83].calories,result.days[83]);
   assert.equal(first.protein,last.protein);
   assert.equal(first.fat,last.fat);
-  assert.equal(first.carbs-last.carbs,60);
-  assert.equal(result.days[0].name,'第1阶段 · 第1天');
-  assert.equal(result.days[7].name,'第2阶段 · 第1天');
+  assert.equal(first.carbs-last.carbs,110);
+  assert.equal(result.days[0].name,'第1周 · 第1天');
+  assert.equal(result.days[7].name,'第2周 · 第1天');
 });
 
-test('532 taper rejects plans beyond the local cycle limit',()=>{
-  const result=cycle.generate532Taper({startCalories:1800,stageDays:15,stageCount:3,carbDrop:20});
-  assert.equal(result.error,'计划总天数不能超过31天');
+test('532 taper supports a four month weekly plan',()=>{
+  const result=cycle.generate532Taper({startCalories:2400,stageCount:16,carbDrop:10});
+  assert.equal(result.error,undefined);
+  assert.equal(result.cycleLength,112);
+  assert.equal(result.config.stageDays,7);
 });
